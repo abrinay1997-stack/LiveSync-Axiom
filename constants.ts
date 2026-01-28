@@ -2,22 +2,22 @@
 import { MeasurementConfig } from './types';
 
 export const COLORS = {
-  primary: '#22d3ee', // cyan-400 (Ultra Bright)
+  primary: '#22d3ee', // cyan-400
   secondary: '#34d399', // emerald-400
   accent: '#fb7185', // rose-400
   warning: '#fbbf24', // amber-400
   phase: '#a78bfa', // violet-400
   coherence: '#fb923c', // orange-400
-  bg: '#020617', 
-  surface: '#0f172a',
-  grid: 'rgba(255, 255, 255, 0.08)',
+  bg: '#050505', 
+  surface: '#0f0f0f',
+  grid: 'rgba(255, 255, 255, 0.05)',
 };
 
 export const TRACE_COLORS = [
   '#22d3ee', // Cyan
+  '#a855f7', // Purple
   '#f472b6', // Pink
   '#fbbf24', // Amber
-  '#a78bfa', // Violet
   '#34d399', // Emerald
   '#60a5fa', // Blue
 ];

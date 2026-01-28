@@ -36,10 +36,11 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
 
     const render = () => {
       const { width, height } = canvas;
-      ctx.fillStyle = COLORS.bg;
+      ctx.fillStyle = '#050505';
       ctx.fillRect(0, 0, width, height);
 
-      ctx.strokeStyle = COLORS.grid;
+      // Grid
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       LOG_FREQUENCIES.forEach(f => {
@@ -56,8 +57,13 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
         if (magnitudes.length === 0) return;
         ctx.beginPath();
         ctx.strokeStyle = color;
-        ctx.lineWidth = isLive ? 3 : 1.5;
+        ctx.lineWidth = isLive ? 3 : 2;
         ctx.globalAlpha = alpha;
+        
+        if (isLive) {
+           ctx.shadowBlur = 10;
+           ctx.shadowColor = color;
+        }
 
         let first = true;
         for (let i = 0; i < magnitudes.length; i++) {
@@ -69,23 +75,22 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
         }
         ctx.stroke();
         ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
       };
 
-      traces.filter(t => t.visible).forEach(t => drawTrace(t.magnitudes, t.color, false, 0.4));
+      traces.filter(t => t.visible).forEach(t => drawTrace(t.magnitudes, t.color, false, 0.5));
 
       if (isActive) {
-        // Dibujamos REFERENCIA (L) en gris/tenue
         const dataRef = audioEngine.getProcessedData(config.smoothing, config.averaging, true);
-        drawTrace(dataRef, 'rgba(255, 255, 255, 0.2)', true);
+        drawTrace(dataRef, 'rgba(255, 255, 255, 0.15)', true);
         
-        // Dibujamos MEDICIÓN (R) en Cyan brillante
         const dataMeas = audioEngine.getProcessedData(config.smoothing, config.averaging, false);
-        drawTrace(dataMeas, COLORS.primary, true);
+        drawTrace(dataMeas, '#22d3ee', true);
       }
 
       if (mousePos.show) {
-        ctx.setLineDash([5, 5]);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.setLineDash([8, 8]);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.beginPath(); 
         ctx.moveTo(mousePos.x, 0); ctx.lineTo(mousePos.x, height);
         ctx.moveTo(0, mousePos.y); ctx.lineTo(width, mousePos.y);
@@ -101,7 +106,8 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
   }, [config, isActive, traces, mousePos]);
 
   return (
-    <div className="relative flex-1 bg-slate-950 rounded-2xl overflow-hidden border border-white/10 group cursor-crosshair">
+    <div className="relative flex-1 bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl group cursor-crosshair">
+      <div className="absolute top-0 left-0 w-full h-px bg-cyan-500/20 shadow-[0_0_10px_rgba(34,211,238,0.3)]"></div>
       <canvas 
         ref={canvasRef} 
         width={1920} 
@@ -111,16 +117,22 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
         onMouseLeave={() => setMousePos(prev => ({ ...prev, show: false }))}
       />
       
-      <div className="absolute top-6 left-6 flex flex-col gap-2 pointer-events-none">
+      <div className="absolute top-6 left-8 flex flex-col gap-3 pointer-events-none">
         <div className="flex gap-2">
-           <div className="px-2 py-0.5 bg-cyan-500 text-black text-[9px] font-bold rounded uppercase">Meas (R)</div>
-           <div className="px-2 py-0.5 bg-white/20 text-white text-[9px] font-bold rounded uppercase">Ref (L)</div>
+           <div className="px-3 py-1 bg-cyan-500 text-black text-[10px] font-black rounded-lg uppercase tracking-widest shadow-lg shadow-cyan-500/20">Meas (R)</div>
+           <div className="px-3 py-1 bg-white/10 text-white/40 text-[10px] font-black rounded-lg uppercase tracking-widest border border-white/5">Ref (L)</div>
         </div>
         {mousePos.show && (
-          <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs mono">
-            <span className="text-cyan-400 font-bold">{hoverData.freq.toFixed(0)}Hz</span>
-            <span className="mx-2 text-slate-500">|</span>
-            <span className="text-white">{hoverData.db.toFixed(1)}dB</span>
+          <div className="bg-black/80 backdrop-blur-xl px-4 py-2 rounded-xl border border-white/10 text-[10px] mono flex gap-4">
+            <div className="flex flex-col">
+              <span className="text-slate-500 uppercase font-black text-[8px]">Frequency</span>
+              <span className="text-cyan-400 font-bold">{hoverData.freq.toFixed(0)} Hz</span>
+            </div>
+            <div className="w-px h-full bg-white/10" />
+            <div className="flex flex-col">
+              <span className="text-slate-500 uppercase font-black text-[8px]">Amplitude</span>
+              <span className="text-white font-bold">{hoverData.db.toFixed(1)} dB</span>
+            </div>
           </div>
         )}
       </div>

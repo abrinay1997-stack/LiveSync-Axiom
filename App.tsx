@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { RotateCcw, Activity, Clock, Wand2 } from 'lucide-react';
+import { RotateCcw, Activity, Clock, Wand2, Command } from 'lucide-react';
 import RTADisplay from './components/RTADisplay';
 import SpectrogramDisplay from './components/SpectrogramDisplay';
 import TransferDisplay from './components/TransferDisplay';
@@ -54,7 +54,7 @@ const App: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col h-screen bg-black text-slate-200 overflow-hidden font-sans select-none">
+    <div className="flex flex-col h-screen bg-[#050505] text-slate-200 overflow-hidden font-sans select-none animate-fade-in">
       <Header activeTab={activeTab} setActiveTab={setActiveTab} isStarted={isStarted} onToggleEngine={toggleEngine} />
 
       <main className="flex-1 flex overflow-hidden">
@@ -64,7 +64,7 @@ const App: React.FC = () => {
           onSelectDevice={setSelectedDevice} onRefreshDevices={refreshDevices} isEngineStarted={isStarted}
         />
 
-        <section className="flex-1 flex flex-col bg-black p-4 gap-4 overflow-hidden">
+        <section className="flex-1 flex flex-col p-6 gap-6 overflow-hidden">
           {activeTab === 'rta' && (
             <>
               <RTADisplay config={config} isActive={isStarted} traces={traces} />
@@ -76,46 +76,56 @@ const App: React.FC = () => {
           {activeTab === 'security' && <WatermarkPanel />}
 
           {(activeTab === 'rta' || activeTab === 'tf' || activeTab === 'impulse') && (
-            <div className="flex gap-4 items-center bg-slate-950 border border-white/5 p-2 rounded-xl shrink-0">
-              <div className="flex gap-2 items-center px-2 border-r border-white/5">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Smoothing</span>
+            <div className="flex gap-6 items-center bg-[#0f0f0f] border border-white/10 p-4 rounded-2xl shrink-0 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-px bg-white/5"></div>
+              
+              <div className="flex gap-2 items-center px-4 border-r border-white/5">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mr-2">Smoothing</span>
                 {(['none', '1/3', '1/12', '1/48'] as const).map(s => (
-                  <button key={s} onClick={() => setSmoothing(s)} className={`px-3 py-1 rounded text-[10px] font-mono border transition-all ${config.smoothing === s ? 'bg-cyan-500 border-cyan-400 text-black font-bold' : 'bg-white/5 border-white/5 text-slate-500 hover:text-slate-300'}`}>{s.toUpperCase()}</button>
+                  <button key={s} onClick={() => setSmoothing(s)} className={`px-4 py-1.5 rounded-xl text-[10px] font-bold border transition-all active:scale-95 ${config.smoothing === s ? 'bg-white text-black border-white' : 'bg-white/5 border-white/10 text-slate-500 hover:text-white hover:bg-white/10'}`}>{s.toUpperCase()}</button>
                 ))}
               </div>
 
               {(activeTab === 'tf' || activeTab === 'impulse') && (
-                <div className="flex items-center gap-3 px-2 border-r border-white/5">
+                <div className="flex items-center gap-4 px-4 border-r border-white/5">
                   <button 
                     onClick={handleAutoDelay} disabled={isFindingDelay || !isStarted}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${isFindingDelay ? 'bg-cyan-500/50 text-white animate-pulse' : 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20'}`}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${isFindingDelay ? 'bg-cyan-500/50 text-white animate-pulse' : 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20 hover:bg-cyan-400'}`}
                   >
-                    <Activity size={12} /> {isFindingDelay ? 'Analyzing...' : 'Auto-Delay (D)'}
+                    <Activity size={14} /> {isFindingDelay ? 'Calculating Delay...' : 'Auto-Delay (D)'}
                   </button>
                   {activeTab === 'tf' && (
                     <button 
                       onClick={handleGenerateEQ} disabled={!isStarted}
-                      className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all"
+                      className="flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-500 text-black hover:bg-emerald-400 shadow-lg shadow-emerald-500/10 transition-all active:scale-95"
                     >
-                      <Wand2 size={12} /> Correction EQ (E)
+                      <Wand2 size={14} /> Generate Correction (E)
                     </button>
                   )}
                   {detectedDelay && (
-                    <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-lg border border-white/5">
-                       <Clock size={12} className="text-slate-500" />
-                       <span className="text-[10px] mono text-cyan-400 font-bold">{detectedDelay.ms.toFixed(2)}ms</span>
-                       <span className="text-[10px] mono text-slate-300 ml-2">{detectedDelay.m.toFixed(2)}m</span>
+                    <div className="flex items-center gap-3 px-5 py-2 bg-black rounded-xl border border-white/10">
+                       <Clock size={14} className="text-cyan-400" />
+                       <div className="flex gap-4 mono font-black">
+                         <span className="text-white text-xs">{detectedDelay.ms.toFixed(2)}ms</span>
+                         <span className="text-slate-600 text-[10px]">{detectedDelay.m.toFixed(2)}m</span>
+                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-              <button 
-                onClick={() => { audioEngine.resetAveraging(); setDetectedDelay(null); }}
-                className="p-2 text-slate-500 hover:text-white transition-colors ml-auto group" title="Reset (R)"
-              >
-                <RotateCcw size={16} className="group-active:rotate-180 transition-transform duration-300" />
-              </button>
+              <div className="ml-auto flex items-center gap-6">
+                 <div className="hidden lg:flex items-center gap-3 text-[9px] text-slate-600 font-bold uppercase tracking-[0.2em]">
+                    <Command size={12} />
+                    <span>Space: Capture | R: Reset | B: Hide Sidebar</span>
+                 </div>
+                 <button 
+                  onClick={() => { audioEngine.resetAveraging(); setDetectedDelay(null); }}
+                  className="p-3 bg-white/5 rounded-xl text-slate-500 hover:text-white hover:bg-white/10 transition-all active:rotate-180 duration-500" title="Reset (R)"
+                >
+                  <RotateCcw size={18} />
+                </button>
+              </div>
             </div>
           )}
         </section>

@@ -12,13 +12,16 @@ interface PanelProps {
 
 const Panel: React.FC<PanelProps> = ({ children, title, subtitle, icon, className = "", rightElement }) => {
   return (
-    <div className={`bg-slate-900/40 border border-white/5 rounded-2xl p-4 backdrop-blur-md flex flex-col ${className}`}>
+    <div className={`bg-[#0f0f0f] border border-white/10 rounded-2xl p-5 shadow-2xl relative overflow-hidden flex flex-col ${className}`}>
+      {/* Top Glow Border */}
+      <div className="absolute top-0 left-0 w-full h-px bg-cyan-500/30 shadow-[0_0_8px_rgba(34,211,238,0.5)]"></div>
+      
       {(title || icon) && (
-        <div className="flex items-center justify-between mb-4 shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mb-5 shrink-0">
+          <div className="flex items-center gap-3">
             {icon && <div className="text-cyan-400">{icon}</div>}
             <div>
-              {title && <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{title}</h3>}
+              {title && <h3 className="text-[10px] font-bold text-white uppercase tracking-[0.15em]">{title}</h3>}
               {subtitle && <p className="text-[9px] text-slate-500 mono uppercase tracking-tighter">{subtitle}</p>}
             </div>
           </div>
