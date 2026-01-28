@@ -1,6 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { MeasurementConfig } from '../types';
+import { COLORS } from '../constants';
 import { audioEngine } from '../services/AudioEngine';
 
 interface SpectrogramProps {
@@ -12,46 +13,52 @@ const SpectrogramDisplay: React.FC<SpectrogramProps> = ({ config, isActive }) =>
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | undefined>(undefined);
   
+  const getMagmaColor = (norm: number) => {
+    const idx = Math.floor(norm * (COLORS.spectrogram.length - 1));
+    return COLORS.spectrogram[idx];
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
-    // Canvas temporal para scroll eficiente
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = canvas.width;
-    tempCanvas.height = canvas.height;
-    const tCtx = tempCanvas.getContext('2d');
+    const bufferCanvas = document.createElement('canvas');
+    bufferCanvas.width = canvas.width;
+    bufferCanvas.height = canvas.height;
+    const bCtx = bufferCanvas.getContext('2d');
 
     const render = () => {
-      if (isActive) {
-        const data = audioEngine.getProcessedData('none', 'None');
+      if (isActive && bCtx) {
+        // En el espectrograma aplicamos la ganancia visual para resaltar eventos débiles
+        const data = audioEngine.getProcessedData('none', 'None', false, config.visualGain);
         if (data.length > 0) {
-          // 1. Mover imagen actual hacia abajo
-          tCtx?.drawImage(canvas, 0, 0);
-          ctx.drawImage(tempCanvas, 0, 1);
+          bCtx.drawImage(canvas, 0, 0);
+          ctx.drawImage(bufferCanvas, 0, 1);
 
-          // 2. Dibujar nueva línea en el tope (y=0)
-          const imgData = ctx.createImageData(canvas.width, 1);
+          const lineImgData = ctx.createImageData(canvas.width, 1);
           for (let x = 0; x < canvas.width; x++) {
             const freq = Math.pow(10, (x / canvas.width) * (Math.log10(20000) - Math.log10(20)) + Math.log10(20));
             const binIndex = Math.floor((freq * 4096) / 48000);
-            const val = data[binIndex] || -100;
+            const val = data[binIndex] || config.minDb;
             
-            // Mapeo de color: Azul (-90) -> Cyan -> Verde -> Amarillo -> Rojo (0)
-            const norm = Math.min(1, Math.max(0, (val + 90) / 90));
-            const r = norm > 0.5 ? 255 * (norm - 0.5) * 2 : 0;
-            const g = norm < 0.5 ? 255 * norm * 2 : 255 * (1 - (norm - 0.5) * 2);
-            const b = norm < 0.5 ? 255 * (1 - norm * 2) : 0;
+            // Normalizar basado en el rango visual definido en config
+            const range = config.maxDb - config.minDb;
+            const norm = Math.min(1, Math.max(0, (val - config.minDb) / range));
+            const hex = getMagmaColor(norm);
+            
+            const r = parseInt(hex.slice(1,3), 16);
+            const g = parseInt(hex.slice(3,5), 16);
+            const b = parseInt(hex.slice(5,7), 16);
 
             const i = x * 4;
-            imgData.data[i] = r;
-            imgData.data[i+1] = g;
-            imgData.data[i+2] = b;
-            imgData.data[i+3] = 255;
+            lineImgData.data[i] = r;
+            lineImgData.data[i+1] = g;
+            lineImgData.data[i+2] = b;
+            lineImgData.data[i+3] = 255;
           }
-          ctx.putImageData(imgData, 0, 0);
+          ctx.putImageData(lineImgData, 0, 0);
         }
       }
       rafRef.current = requestAnimationFrame(render);
@@ -59,13 +66,16 @@ const SpectrogramDisplay: React.FC<SpectrogramProps> = ({ config, isActive }) =>
 
     render();
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [isActive]);
+  }, [isActive, config]);
 
   return (
-    <div className="h-32 bg-slate-950 border border-white/5 rounded-xl overflow-hidden relative">
-      <canvas ref={canvasRef} width={1024} height={256} className="w-full h-full object-fill" />
-      <div className="absolute top-1 right-2 text-[8px] font-bold text-white/20 uppercase tracking-widest pointer-events-none">
-        Waterfall / Spectrogram
+    <div className="h-40 bg-slate-950 border border-white/5 rounded-2xl overflow-hidden relative shadow-inner">
+      <canvas ref={canvasRef} width={1920} height={400} className="w-full h-full object-fill" />
+      <div className="absolute right-3 top-0 h-full flex flex-col justify-between py-2 text-[7px] mono font-bold text-white/10 uppercase pointer-events-none">
+        <span>NOW</span><span>-5S</span><span>-10S</span><span>-15S</span>
+      </div>
+      <div className="absolute bottom-2 left-4 px-3 py-1 bg-black/40 backdrop-blur-md rounded-lg border border-white/5">
+        <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">HD Waterfall Analyzer</span>
       </div>
     </div>
   );

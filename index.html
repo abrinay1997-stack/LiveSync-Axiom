@@ -50,6 +50,23 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+        
+        /* Custom Scrollbar Styles */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 211, 238, 0.3);
+        }
+
         ::-webkit-scrollbar {
             width: 4px;
             height: 4px;
@@ -65,7 +82,9 @@
             background: rgba(34, 211, 238, 0.3);
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 300ms ease-in-out; }
+        .animate-slide-up { animation: slideUp 400ms cubic-bezier(0.16, 1, 0.3, 1); }
     </style>
 <script type="importmap">
 {

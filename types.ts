@@ -3,6 +3,11 @@ export type SmoothingType = 'none' | '1/1' | '1/3' | '1/6' | '1/12' | '1/24' | '
 export type AveragingType = 'None' | 'Exp' | 'Lin' | 'Inf';
 export type WeightingType = 'Flat' | 'A' | 'C';
 
+export interface TraceMetadata {
+  peakFreq: number;
+  avgLevel: number;
+}
+
 export interface MeasurementConfig {
   fftSize: number;
   smoothing: SmoothingType;
@@ -12,6 +17,7 @@ export interface MeasurementConfig {
   maxFreq: number;
   minDb: number;
   maxDb: number;
+  visualGain: number; // Ganancia digital solo para visualización (dB)
   showPhase: boolean;
   showCoherence: boolean;
 }
@@ -25,6 +31,7 @@ export interface TraceData {
   coherence?: Float32Array;
   timestamp: number;
   visible: boolean;
+  metadata?: TraceMetadata;
 }
 
 export interface TFData {

@@ -4,6 +4,7 @@ import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
 import Footer from './components/Layout/Footer';
 import MainStage from './components/Layout/MainStage';
+import ConfigModal from './components/ConfigModal';
 import { useAudioSystem } from './hooks/useAudioSystem';
 import { useTraces } from './hooks/useTraces';
 import { useHotkeys } from './hooks/useHotkeys';
@@ -11,19 +12,18 @@ import { useMeasurementConfig } from './hooks/useMeasurementConfig';
 import { useAcousticAnalyzer } from './hooks/useAcousticAnalyzer';
 
 const App: React.FC = () => {
-  // 1. Core Systems Hooks
   const { isStarted, devices, selectedDevice, setSelectedDevice, toggleEngine, refreshDevices } = useAudioSystem();
-  const { traces, captureTrace, deleteTrace, toggleTraceVisibility } = useTraces();
-  const { config, setSmoothing } = useMeasurementConfig();
+  const { 
+    traces, captureTrace, deleteTrace, renameTrace, clearAllTraces, toggleTraceVisibility, exportSession, importSession
+  } = useTraces();
+  const { config, setSmoothing, updateConfig } = useMeasurementConfig();
   
-  // 2. Specialized Analysis Hook
   const analysis = useAcousticAnalyzer(isStarted);
 
-  // 3. UI State
   const [activeTab, setActiveTab] = useState<'rta' | 'tf' | 'impulse' | 'security'>('rta');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [configOpen, setConfigOpen] = useState(false);
 
-  // 4. Keyboard Orchestration
   useHotkeys({
     'Space': captureTrace,
     'KeyB': () => setSidebarOpen(prev => !prev),
@@ -33,7 +33,8 @@ const App: React.FC = () => {
     'Digit3': () => setActiveTab('impulse'),
     'Digit4': () => setActiveTab('security'),
     'KeyD': analysis.runAutoDelay,
-    'KeyE': analysis.generateCorrection
+    'KeyE': analysis.generateCorrection,
+    'Comma': () => setConfigOpen(prev => !prev) 
   });
 
   return (
@@ -42,7 +43,8 @@ const App: React.FC = () => {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         isStarted={isStarted} 
-        onToggleEngine={toggleEngine} 
+        onToggleEngine={toggleEngine}
+        onOpenConfig={() => setConfigOpen(true)}
       />
 
       <main className="flex-1 flex overflow-hidden">
@@ -50,12 +52,9 @@ const App: React.FC = () => {
           isOpen={sidebarOpen} 
           traces={traces} 
           onCapture={captureTrace} 
-          onDeleteTrace={deleteTrace}
-          onToggleVisibility={toggleTraceVisibility} 
-          devices={devices} 
-          selectedDevice={selectedDevice}
-          onSelectDevice={setSelectedDevice} 
-          onRefreshDevices={refreshDevices} 
+          onDelete={deleteTrace}
+          onRename={renameTrace}
+          onToggleVisibility={toggleTraceVisibility}
           isEngineStarted={isStarted}
         />
 
@@ -65,11 +64,28 @@ const App: React.FC = () => {
           config={config}
           traces={traces}
           setSmoothing={setSmoothing}
+          updateConfig={updateConfig}
           analysis={analysis}
         />
       </main>
 
       <Footer isStarted={isStarted} />
+
+      <ConfigModal 
+        isOpen={configOpen}
+        onClose={() => setConfigOpen(false)}
+        devices={devices}
+        selectedDevice={selectedDevice}
+        onSelectDevice={setSelectedDevice}
+        onRefreshDevices={refreshDevices}
+        isEngineStarted={isStarted}
+        sessionActions={{
+          exportSession,
+          importSession,
+          clearAll: clearAllTraces,
+          hasTraces: traces.length > 0
+        }}
+      />
     </div>
   );
 };
