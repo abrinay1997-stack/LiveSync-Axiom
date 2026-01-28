@@ -1,133 +1,129 @@
 
-import React, { useState } from 'react';
-import { Shield, Key, Zap, Info, Download, Search } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Shield, Key, Zap, Info, Search, Activity, Lock, Unlock } from 'lucide-react';
 import { WatermarkEngine } from '../services/WatermarkEngine';
 import { audioEngine } from '../services/AudioEngine';
 
 const WatermarkPanel: React.FC = () => {
   const [alpha, setAlpha] = useState(0.005);
   const [key, setKey] = useState(12345);
-  const [lastScore, setLastScore] = useState<number | null>(null);
-  const [psnr, setPsnr] = useState<number | null>(null);
+  const [lastScore, setLastScore] = useState<number>(0);
+  const [isLiveScanning, setIsLiveScanning] = useState(false);
+  const [detectionHistory, setDetectionHistory] = useState<number[]>([]);
+  
+  const scanIntervalRef = useRef<number | undefined>(undefined);
 
-  const testEmbedding = () => {
-    // Generamos un buffer de prueba (o usamos el del generador de ruido)
-    const duration = 1; // 1 segundo
-    const size = 48000 * duration;
-    const original = new Float32Array(size);
-    for(let i=0; i<size; i++) original[i] = Math.random() * 2 - 1;
-
-    const watermarked = WatermarkEngine.embed(original, alpha, key);
-    const score = WatermarkEngine.extract(watermarked, key);
-    const calculatedPsnr = WatermarkEngine.calculatePSNR(original, watermarked);
-
-    setLastScore(score);
-    setPsnr(calculatedPsnr);
+  const toggleLiveScan = () => {
+    if (isLiveScanning) {
+      clearInterval(scanIntervalRef.current);
+      setIsLiveScanning(false);
+    } else {
+      setIsLiveScanning(true);
+      scanIntervalRef.current = window.setInterval(() => {
+        const samples = audioEngine.getLiveSamples();
+        if (samples && samples.length > 1024) {
+          const score = WatermarkEngine.extract(samples, key);
+          setLastScore(score);
+          setDetectionHistory(prev => [...prev.slice(-20), score]);
+        }
+      }, 100);
+    }
   };
 
+  useEffect(() => {
+    return () => clearInterval(scanIntervalRef.current);
+  }, []);
+
+  const isDetected = lastScore > 0.05;
+
   return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-6 backdrop-blur-md flex-1">
-        <div className="flex items-center justify-between mb-6">
+    <div className="flex flex-col gap-4 h-full overflow-hidden">
+      <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-6 backdrop-blur-md flex-1 flex flex-col">
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-rose-500/10 rounded-lg border border-rose-500/20">
-              <Shield className="text-rose-400" size={20} />
+            <div className={`p-2 rounded-lg border transition-colors ${isDetected ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20'}`}>
+              <Shield className={isDetected ? 'text-emerald-400' : 'text-rose-400'} size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Audio Watermarking (DSSS)</h3>
-              <p className="text-[10px] text-slate-500 mono uppercase">DWT Haar Level 2 / PN Antipodal</p>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Stream Security Scanner</h3>
+              <p className="text-[10px] text-slate-500 mono uppercase tracking-tighter">DSSS Extraction / Confidence: {(lastScore * 100).toFixed(1)}%</p>
             </div>
           </div>
+
+          <button 
+            onClick={toggleLiveScan}
+            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isLiveScanning ? 'bg-rose-500 text-white animate-pulse' : 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20'}`}
+          >
+            {isLiveScanning ? <Activity size={14}/> : <Search size={14}/>}
+            {isLiveScanning ? 'STOP SCAN' : 'START LIVE SCAN'}
+          </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <label className="text-[10px] text-slate-500 uppercase font-bold mb-2 block flex items-center gap-1">
-                <Zap size={10} className="text-amber-500" /> Embedding Intensity (α)
-              </label>
-              <input 
-                type="range" 
-                min="0.001" 
-                max="0.05" 
-                step="0.001"
-                value={alpha}
-                onChange={(e) => setAlpha(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-500"
-              />
-              <div className="flex justify-between mt-1 text-[10px] mono text-slate-400">
-                <span>Inaudible</span>
-                <span className="text-rose-400 font-bold">{alpha.toFixed(4)}</span>
-                <span>Robust</span>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1">
+          <div className="space-y-6">
+             <div className="p-4 bg-black/40 rounded-2xl border border-white/5 space-y-4">
+                <div>
+                  <label className="text-[10px] text-slate-500 uppercase font-black mb-3 block flex items-center gap-2">
+                    <Key size={12} className="text-cyan-400" /> Decryption Key
+                  </label>
+                  <input 
+                    type="number" 
+                    value={key}
+                    onChange={(e) => setKey(parseInt(e.target.value))}
+                    className="w-full bg-slate-900/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-cyan-400 outline-none focus:border-cyan-500/50 mono font-bold"
+                  />
+                </div>
 
-            <div>
-              <label className="text-[10px] text-slate-500 uppercase font-bold mb-2 block flex items-center gap-1">
-                <Key size={10} className="text-cyan-500" /> Security Key
-              </label>
-              <input 
-                type="number" 
-                value={key}
-                onChange={(e) => setKey(parseInt(e.target.value))}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-cyan-400 outline-none focus:border-cyan-500/50 mono"
-              />
-            </div>
+                <div className="pt-2">
+                   <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] text-slate-500 uppercase font-bold">Detection Threshold</span>
+                      <span className="text-[10px] mono text-emerald-400">0.05 Score</span>
+                   </div>
+                   <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${Math.min(100, lastScore * 500)}%` }} />
+                   </div>
+                </div>
+             </div>
 
-            <button 
-              onClick={testEmbedding}
-              className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl shadow-lg shadow-rose-500/20 transition-all flex items-center justify-center gap-2"
-            >
-              <Zap size={18} /> Run Test Simulation
-            </button>
+             <div className="bg-slate-900/20 border border-white/5 rounded-2xl p-5 flex gap-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all ${isDetected ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-slate-800 border-white/5'}`}>
+                   {isDetected ? <Lock className="text-emerald-400" size={24}/> : <Unlock className="text-slate-600" size={24}/>}
+                </div>
+                <div>
+                   <h4 className={`text-xs font-black uppercase ${isDetected ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      {isDetected ? 'AUTHENTICATED SIGNAL' : 'NO MARK DETECTED'}
+                   </h4>
+                   <p className="text-[10px] text-slate-500 leading-relaxed mt-1">
+                      {isDetected 
+                        ? 'La firma digital DSSS ha sido validada mediante correlación cruzada en la subbanda Wavelet.' 
+                        : 'El sistema está monitoreando el espectro en busca de secuencias PN autorizadas.'}
+                   </p>
+                </div>
+             </div>
           </div>
 
-          <div className="bg-black/20 rounded-2xl border border-white/5 p-4 flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="flex justify-between items-end border-b border-white/5 pb-2">
-                <span className="text-[10px] text-slate-500 uppercase">Detection Score</span>
-                <span className={`text-lg mono font-bold ${lastScore && lastScore > 0.001 ? 'text-emerald-400' : 'text-slate-600'}`}>
-                  {lastScore ? lastScore.toFixed(6) : '---'}
-                </span>
-              </div>
-              <div className="flex justify-between items-end border-b border-white/5 pb-2">
-                <span className="text-[10px] text-slate-500 uppercase">Transparency (PSNR)</span>
-                <span className={`text-lg mono font-bold ${psnr && psnr > 40 ? 'text-cyan-400' : 'text-amber-500'}`}>
-                  {psnr ? `${psnr.toFixed(1)} dB` : '---'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-slate-500 uppercase">Status</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${lastScore && lastScore > 0.001 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-800 text-slate-500'}`}>
-                  {lastScore && lastScore > 0.001 ? 'MARK DETECTED' : 'IDLE / NO MARK'}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex gap-3">
-              <Info size={16} className="text-blue-400 shrink-0" />
-              <p className="text-[9px] text-slate-400 leading-tight">
-                El motor DSSS inserta una secuencia PN antipodal en la subbanda cD2 del dominio Wavelet. 
-                Esto garantiza resiliencia contra compresión y ruido gaussiano sin comprometer la fase.
-              </p>
-            </div>
+          <div className="flex flex-col gap-4">
+             <div className="flex-1 bg-black/40 rounded-2xl border border-white/5 p-4 flex flex-col relative overflow-hidden">
+                <span className="text-[8px] font-bold text-slate-600 uppercase absolute top-4 left-4">Correlation History</span>
+                <div className="flex-1 flex items-end gap-1 px-2 pt-6">
+                   {detectionHistory.map((h, i) => (
+                     <div 
+                        key={i} 
+                        className={`flex-1 rounded-t-sm transition-all duration-300 ${h > 0.05 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-slate-800'}`}
+                        style={{ height: `${Math.min(100, h * 600)}%` }}
+                     />
+                   ))}
+                </div>
+             </div>
+             
+             <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 flex gap-4">
+                <Info size={18} className="text-blue-400 shrink-0" />
+                <p className="text-[10px] text-slate-400 leading-relaxed">
+                   <strong>Principio DSSS:</strong> La marca es inyectada mediante ensanchamiento de espectro. El receptor debe conocer la clave PN exacta para colapsar la energía y extraer el bit de información.
+                </p>
+             </div>
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4 h-32">
-        <button className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 hover:bg-slate-800/60 transition-all flex flex-col items-center justify-center gap-2 group">
-          <Download className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
-          <span className="text-[10px] text-slate-400 uppercase font-bold">Process & Export</span>
-        </button>
-        <button className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 hover:bg-slate-800/60 transition-all flex flex-col items-center justify-center gap-2 group">
-          <Search className="text-slate-500 group-hover:text-cyan-400 transition-colors" />
-          <span className="text-[10px] text-slate-400 uppercase font-bold">Live Scan</span>
-        </button>
-        <button className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 hover:bg-slate-800/60 transition-all flex flex-col items-center justify-center gap-2 group">
-          <Shield className="text-slate-500 group-hover:text-rose-400 transition-colors" />
-          <span className="text-[10px] text-slate-400 uppercase font-bold">Anti-Piracy Log</span>
-        </button>
       </div>
     </div>
   );

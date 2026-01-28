@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { Layers, Scissors, Eye, EyeOff } from 'lucide-react';
+import { Layers, Scissors, Eye, EyeOff, Mic, Settings2 } from 'lucide-react';
 import Meter from '../Meter';
 import SignalGenerator from '../SignalGenerator';
 import DeviceSelector from '../DeviceSelector';
+import Panel from '../Common/Panel';
 import { TraceData } from '../../types';
 
 interface SidebarProps {
@@ -34,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   if (!isOpen) return null;
 
   return (
-    <aside className="w-64 border-r border-white/5 bg-slate-950 flex flex-col gap-4 overflow-hidden p-4 shrink-0 transition-all">
+    <aside className="w-64 border-r border-white/5 bg-slate-950 flex flex-col gap-3 overflow-hidden p-3 shrink-0 transition-all">
       <DeviceSelector 
         devices={devices} 
         selectedDevice={selectedDevice} 
@@ -47,12 +48,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       
       <SignalGenerator />
       
-      <div className="bg-white/5 rounded-xl p-4 border border-white/5 flex-1 flex flex-col min-h-0">
-         <h4 className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2 mb-4 shrink-0">
-           <Layers size={12}/> Snapshots
-         </h4>
-         
-         <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+      <Panel 
+        title="Snapshots" 
+        icon={<Layers size={12}/>}
+        className="flex-1 flex flex-col"
+      >
+         <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar min-h-0">
             {traces.map(t => (
               <div key={t.id} className="flex items-center justify-between p-2 bg-black/40 rounded-lg border border-white/5 group">
                 <div className="flex items-center gap-2 overflow-hidden flex-1">
@@ -77,11 +78,11 @@ const Sidebar: React.FC<SidebarProps> = ({
          <button 
           onClick={onCapture} 
           disabled={!isEngineStarted}
-          className="w-full mt-4 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-bold uppercase rounded-lg border border-white/10 transition-all active:scale-95 shrink-0"
+          className="w-full mt-3 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-bold uppercase rounded-lg border border-white/10 transition-all active:scale-95 shrink-0"
          >
            Take Snapshot
          </button>
-      </div>
+      </Panel>
     </aside>
   );
 };

@@ -36,12 +36,9 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
 
     const render = () => {
       const { width, height } = canvas;
-      
-      // Fondo
       ctx.fillStyle = COLORS.bg;
       ctx.fillRect(0, 0, width, height);
 
-      // 1. Grid Lineas ISO (Pre-calculadas idealmente, aquí optimizadas)
       ctx.strokeStyle = COLORS.grid;
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -55,44 +52,40 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
       }
       ctx.stroke();
 
-      const drawTrace = (magnitudes: Float32Array, color: string, isLive: boolean) => {
+      const drawTrace = (magnitudes: Float32Array, color: string, isLive: boolean, alpha: number = 1) => {
         if (magnitudes.length === 0) return;
         ctx.beginPath();
         ctx.strokeStyle = color;
-        ctx.lineWidth = isLive ? 4 : 2;
-        ctx.globalAlpha = isLive ? 1 : 0.5;
+        ctx.lineWidth = isLive ? 3 : 1.5;
+        ctx.globalAlpha = alpha;
 
         let first = true;
-        const step = magnitudes.length > 2048 ? 2 : 1; // Optimizamos dibujo si hay muchos bins
-        for (let i = 0; i < magnitudes.length; i += step) {
+        for (let i = 0; i < magnitudes.length; i++) {
           const binFreq = (i * 48000) / 4096;
           if (binFreq < 18 || binFreq > 22000) continue;
-          
           const x = (Math.log10(binFreq) - Math.log10(20)) / (Math.log10(20000) - Math.log10(20)) * width;
-          const val = magnitudes[i];
-          const y = (config.maxDb - val) / (config.maxDb - config.minDb) * height;
-          
-          if (first) { ctx.moveTo(x, y); first = false; } 
-          else { ctx.lineTo(x, y); }
+          const y = (config.maxDb - magnitudes[i]) / (config.maxDb - config.minDb) * height;
+          if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
         ctx.stroke();
         ctx.globalAlpha = 1;
       };
 
-      // 2. Trazas capturadas
-      traces.filter(t => t.visible).forEach(t => drawTrace(t.magnitudes, t.color, false));
+      traces.filter(t => t.visible).forEach(t => drawTrace(t.magnitudes, t.color, false, 0.4));
 
-      // 3. Traza en Vivo con Pipeline de AudioEngine
       if (isActive) {
-        const processed = audioEngine.getProcessedData(config.smoothing, config.averaging);
-        drawTrace(processed, COLORS.primary, true);
+        // Dibujamos REFERENCIA (L) en gris/tenue
+        const dataRef = audioEngine.getProcessedData(config.smoothing, config.averaging, true);
+        drawTrace(dataRef, 'rgba(255, 255, 255, 0.2)', true);
+        
+        // Dibujamos MEDICIÓN (R) en Cyan brillante
+        const dataMeas = audioEngine.getProcessedData(config.smoothing, config.averaging, false);
+        drawTrace(dataMeas, COLORS.primary, true);
       }
 
-      // 4. Crosshair
       if (mousePos.show) {
-        ctx.setLineDash([10, 10]);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.beginPath(); 
         ctx.moveTo(mousePos.x, 0); ctx.lineTo(mousePos.x, height);
         ctx.moveTo(0, mousePos.y); ctx.lineTo(width, mousePos.y);
@@ -118,30 +111,18 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
         onMouseLeave={() => setMousePos(prev => ({ ...prev, show: false }))}
       />
       
-      <div className="absolute top-8 left-8 pointer-events-none">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-3 mb-2">
-            <div className={`px-3 py-1 text-black text-xs font-black rounded uppercase tracking-widest transition-colors ${config.averaging !== 'None' ? 'bg-amber-400' : 'bg-cyan-500'}`}>
-              {config.averaging !== 'None' ? `${config.averaging} AVG ACTIVE` : 'LIVE RTA'}
-            </div>
-            <span className="text-xs font-mono text-slate-500 bg-black/50 px-2 py-1 rounded">
-              FFT 4096 / {config.smoothing.toUpperCase()}
-            </span>
-          </div>
-          
-          {mousePos.show && (
-            <div className="flex gap-2">
-               <div className="bg-black/80 backdrop-blur-xl px-4 py-2 rounded-xl border border-white/10 shadow-2xl">
-                 <span className="text-[10px] text-slate-500 block uppercase font-bold tracking-tighter">Frequency</span>
-                 <span className="text-2xl font-black text-white mono">{hoverData.freq > 1000 ? (hoverData.freq/1000).toFixed(2) + 'k' : Math.round(hoverData.freq)} <span className="text-sm text-slate-500 font-normal">Hz</span></span>
-               </div>
-               <div className="bg-black/80 backdrop-blur-xl px-4 py-2 rounded-xl border border-white/10 shadow-2xl">
-                 <span className="text-[10px] text-slate-500 block uppercase font-bold tracking-tighter">Magnitude</span>
-                 <span className="text-2xl font-black text-rose-400 mono">{hoverData.db.toFixed(1)} <span className="text-sm text-slate-500 font-normal">dB</span></span>
-               </div>
-            </div>
-          )}
+      <div className="absolute top-6 left-6 flex flex-col gap-2 pointer-events-none">
+        <div className="flex gap-2">
+           <div className="px-2 py-0.5 bg-cyan-500 text-black text-[9px] font-bold rounded uppercase">Meas (R)</div>
+           <div className="px-2 py-0.5 bg-white/20 text-white text-[9px] font-bold rounded uppercase">Ref (L)</div>
         </div>
+        {mousePos.show && (
+          <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-xs mono">
+            <span className="text-cyan-400 font-bold">{hoverData.freq.toFixed(0)}Hz</span>
+            <span className="mx-2 text-slate-500">|</span>
+            <span className="text-white">{hoverData.db.toFixed(1)}dB</span>
+          </div>
+        )}
       </div>
     </div>
   );

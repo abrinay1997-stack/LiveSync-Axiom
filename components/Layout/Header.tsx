@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Activity, BarChart3, GitCompare, ShieldAlert, Command } from 'lucide-react';
+import { Activity, BarChart3, GitCompare, ShieldAlert, Command, Timer } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
@@ -24,6 +24,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onT
           {[
             { id: 'rta', icon: <BarChart3 size={14} />, label: 'RTA' },
             { id: 'tf', icon: <GitCompare size={14} />, label: 'Transfer' },
+            { id: 'impulse', icon: <Timer size={14} />, label: 'Impulse' },
             { id: 'security', icon: <ShieldAlert size={14} />, label: 'Trace' }
           ].map((tab) => (
             <button 
@@ -40,7 +41,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onT
       <div className="flex items-center gap-4">
          <div className="hidden md:flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
            <Command size={10} /> 
-           <span>Space: Capture | G: Noise | B: Sidebar</span>
+           <span>Space: Capture | D: Auto-Delay | B: Sidebar</span>
          </div>
          <button 
           onClick={onToggleEngine}

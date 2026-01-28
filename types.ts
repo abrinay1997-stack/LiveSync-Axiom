@@ -21,13 +21,15 @@ export interface TraceData {
   name: string;
   color: string;
   magnitudes: Float32Array;
+  phase?: Float32Array;
+  coherence?: Float32Array;
   timestamp: number;
   visible: boolean;
 }
 
-export interface TransferFunctionData {
+export interface TFData {
   magnitude: Float32Array;
   phase: Float32Array;
   coherence: Float32Array;
-  frequencies: Float32Array;
+  correctionEq?: Float32Array;
 }
