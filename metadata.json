@@ -1,0 +1,7 @@
+{
+  "name": "LiveSync Axiom",
+  "description": "Professional-grade audio measurement suite featuring RTA, Transfer Function, Delay Finder, and Signal Generation for system alignment and acoustics analysis.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
