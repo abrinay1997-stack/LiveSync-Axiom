@@ -128,7 +128,9 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ activeTab, isOpen, onClos
         <div className="pt-8 opacity-20 hover:opacity-100 transition-opacity">
            <div className="p-4 rounded-xl border border-dashed border-white/10 text-center">
               <HelpCircle size={24} className="mx-auto mb-2 text-slate-500" />
-              <p className="text-[8px] mono uppercase text-slate-500">Axiom V2.5 Professional Series<br/>Knowledge Base System</p>
+              <p className="text-[8px] mono uppercase text-slate-500">
+                <span className="gradient-pro font-black">AXIOM</span> V2.5 Professional Series<br/>Knowledge Base System
+              </p>
            </div>
         </div>
       </div>

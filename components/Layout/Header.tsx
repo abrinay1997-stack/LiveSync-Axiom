@@ -34,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onT
           <div className="flex flex-col leading-none">
             <h1 className="text-sm font-black tracking-tighter flex items-center gap-1">
               <span className="text-white">LiveSync</span>
-              <span className="text-cyan-400">AXIOM</span>
+              <span className="gradient-pro">AXIOM</span>
             </h1>
           </div>
         </div>

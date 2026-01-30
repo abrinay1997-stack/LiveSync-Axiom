@@ -60,7 +60,10 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 <Settings2 size={24} className="text-cyan-400" />
               </div>
               <div>
-                <h2 className="text-base font-black text-white uppercase tracking-widest">Axiom Workbench</h2>
+                <h2 className="text-base font-black text-white uppercase tracking-widest">
+                  <span className="gradient-pro mr-2">AXIOM</span> 
+                  Workbench
+                </h2>
                 <p className="text-[10px] text-slate-500 uppercase tracking-tighter">System Configuration & Integrity</p>
               </div>
             </div>
