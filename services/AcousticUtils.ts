@@ -19,10 +19,9 @@ export const AcousticUtils = {
 
   /**
    * Extrae métricas clave de una captura de magnitud.
-   * Acepta ArrayBuffer para cumplir con requisitos de tipado en ciertos entornos de build.
+   * Optimizado para recibir directamente la vista Float32Array.
    */
-  analyzeTrace(magnitudes: Float32Array | ArrayBuffer, sampleRate: number): TraceMetadata {
-    const data = magnitudes instanceof ArrayBuffer ? new Float32Array(magnitudes) : magnitudes;
+  analyzeTrace(data: Float32Array, sampleRate: number): TraceMetadata {
     let maxVal = -Infinity;
     let peakIdx = 0;
     let sum = 0;

@@ -4,6 +4,7 @@ import { TraceData } from '../types';
 import { TRACE_COLORS } from '../constants';
 import { audioEngine } from '../services/AudioEngine';
 import { AcousticUtils } from '../services/AcousticUtils';
+import { toArrayBuffer } from '../services/AudioUtils';
 
 const STORAGE_KEY = 'livesync_snapshots';
 
@@ -55,16 +56,21 @@ export const useTraces = () => {
     
     const tf = audioEngine.getTransferFunction('none');
     
-    // Aplicamos la corrección para el build de Netlify: pasamos el buffer subyacente
-    const metadata = AcousticUtils.analyzeTrace(data.buffer, 48000);
+    // CORRECCIÓN NETLIFY: Analizamos sobre la vista actual
+    const metadata = AcousticUtils.analyzeTrace(data, 48000);
     
+    // Aseguramos que las magnitudes guardadas sean copias limpias (clones)
+    const savedMagnitudes = new Float32Array(toArrayBuffer(data));
+    const savedPhase = new Float32Array(toArrayBuffer(tf.phase));
+    const savedCoherence = new Float32Array(toArrayBuffer(tf.coherence));
+
     const newTrace: TraceData = {
       id: Math.random().toString(36).substr(2, 9),
       name: isSweep ? `Sweep Capture ${traces.length + 1}` : `Instant ${traces.length + 1}`,
       color: isSweep ? '#22d3ee' : TRACE_COLORS[traces.length % TRACE_COLORS.length],
-      magnitudes: data.slice(),
-      phase: tf.phase.slice(),
-      coherence: tf.coherence.slice(),
+      magnitudes: savedMagnitudes,
+      phase: savedPhase,
+      coherence: savedCoherence,
       timestamp: Date.now(),
       visible: true,
       metadata
