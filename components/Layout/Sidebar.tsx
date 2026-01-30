@@ -15,10 +15,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     traces, captureTrace, deleteTrace, renameTrace, toggleTraceVisibility, audioSystem 
   } = useMeasurement();
 
+  // Se cambia el estado inicial a false para que todas las secciones comiencen cerradas
   const [openSections, setOpenSections] = useState({
-    meters: true,
-    generator: true,
-    screenshots: true
+    meters: false,
+    generator: false,
+    screenshots: false
   });
 
   const toggleSection = (section: keyof typeof openSections) => {
