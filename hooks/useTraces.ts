@@ -41,7 +41,7 @@ export const useTraces = () => {
     const analyzer = audioEngine.getAnalyzer();
     if (!analyzer) return;
     
-    let data: Float32Array;
+    let data: Float32Array<ArrayBuffer>;
     let isSweep = false;
     
     const lastSweep = (window as any).Axiom_LastSweepData;
