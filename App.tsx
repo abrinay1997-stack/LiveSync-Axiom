@@ -4,6 +4,7 @@ import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
 import Footer from './components/Layout/Footer';
 import MainStage from './components/Layout/MainStage';
+import KnowledgeBase from './components/Layout/KnowledgeBase';
 import ConfigModal from './components/ConfigModal';
 import { MeasurementProvider, useMeasurement } from './context/MeasurementContext';
 import { useHotkeys } from './hooks/useHotkeys';
@@ -17,6 +18,7 @@ const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'rta' | 'tf' | 'impulse' | 'security'>('rta');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bottomOpen, setBottomOpen] = useState(true);
+  const [knowledgeOpen, setKnowledgeOpen] = useState(false); // Por defecto cerrado
   const [configOpen, setConfigOpen] = useState(false);
 
   useHotkeys({
@@ -29,7 +31,8 @@ const AppContent: React.FC = () => {
     'Digit4': () => setActiveTab('security'),
     'KeyD': analysis.runAutoDelay,
     'KeyE': analysis.generateCorrection,
-    'Comma': () => setConfigOpen(prev => !prev) 
+    'Comma': () => setConfigOpen(prev => !prev),
+    'KeyH': () => setKnowledgeOpen(prev => !prev) 
   });
 
   return (
@@ -43,14 +46,25 @@ const AppContent: React.FC = () => {
         layout={{
           sidebar: sidebarOpen,
           bottom: bottomOpen,
+          knowledge: knowledgeOpen,
           setSidebar: setSidebarOpen,
-          setBottom: setBottomOpen
+          setBottom: setBottomOpen,
+          setKnowledge: setKnowledgeOpen
         }}
       />
 
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden relative">
         {sidebarOpen && <Sidebar isOpen={sidebarOpen} />}
-        <MainStage activeTab={activeTab} bottomVisible={bottomOpen} />
+        
+        <div className="flex-1 flex flex-col min-w-0">
+          <MainStage activeTab={activeTab} bottomVisible={bottomOpen} />
+        </div>
+
+        <KnowledgeBase 
+          activeTab={activeTab} 
+          isOpen={knowledgeOpen} 
+          onClose={() => setKnowledgeOpen(false)} 
+        />
       </main>
 
       <Footer isStarted={audioSystem.isStarted} />

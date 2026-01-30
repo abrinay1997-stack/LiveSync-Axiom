@@ -1,7 +1,9 @@
 
 import React from 'react';
-/* Fixed incorrect icon imports: LayoutSidebarLeft -> PanelLeft, LayoutPanelBottom -> PanelBottom */
-import { BarChart3, GitCompare, ShieldAlert, Timer, Settings, Activity, PanelLeft, PanelBottom, Maximize, Sidebar as SidebarIcon } from 'lucide-react';
+import { 
+  BarChart3, GitCompare, ShieldAlert, Timer, Settings, Activity, 
+  PanelLeft, PanelBottom, PanelRight, HelpCircle 
+} from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
@@ -12,8 +14,10 @@ interface HeaderProps {
   layout: {
     sidebar: boolean;
     bottom: boolean;
+    knowledge: boolean;
     setSidebar: (v: boolean) => void;
     setBottom: (v: boolean) => void;
+    setKnowledge: (v: boolean) => void;
   };
 }
 
@@ -42,13 +46,25 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onT
             { id: 'impulse', icon: <Timer size={12} />, label: 'Impulse' },
             { id: 'security', icon: <ShieldAlert size={12} />, label: 'Security' }
           ].map((tab) => (
-            <button 
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-500 hover:text-white'}`}
-            >
-              {tab.icon} {tab.label}
-            </button>
+            <div key={tab.id} className="flex items-center relative group/tab">
+              <button 
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-500 hover:text-white'}`}
+              >
+                {tab.icon} {tab.label}
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveTab(tab.id as any);
+                  layout.setKnowledge(true);
+                }}
+                className={`p-1.5 ml-0.5 rounded hover:bg-white/10 transition-colors ${activeTab === tab.id ? 'text-black/50 hover:text-black' : 'text-slate-700 hover:text-cyan-400'}`}
+                title={`Help for ${tab.label}`}
+              >
+                <HelpCircle size={10} />
+              </button>
+            </div>
           ))}
         </nav>
       </div>
@@ -58,19 +74,24 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onT
         <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5 mr-4">
           <button 
             onClick={() => layout.setSidebar(!layout.sidebar)}
-            className={`p-2 rounded-lg transition-all ${layout.sidebar ? 'text-cyan-400 bg-cyan-400/10 shadow-[inset_0_0_8px_rgba(34,211,238,0.2)]' : 'text-slate-600 hover:text-slate-300'}`}
+            className={`p-2 rounded-lg transition-all ${layout.sidebar ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`}
             title="Toggle Left Sidebar"
           >
-            {/* Fixed incorrect icon usage */}
             <PanelLeft size={16} />
           </button>
           <button 
             onClick={() => layout.setBottom(!layout.bottom)}
-            className={`p-2 rounded-lg transition-all ${layout.bottom ? 'text-cyan-400 bg-cyan-400/10 shadow-[inset_0_0_8px_rgba(34,211,238,0.2)]' : 'text-slate-600 hover:text-slate-300'}`}
+            className={`p-2 rounded-lg transition-all ${layout.bottom ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`}
             title="Toggle Bottom Panel"
           >
-            {/* Fixed incorrect icon usage */}
             <PanelBottom size={16} />
+          </button>
+          <button 
+            onClick={() => layout.setKnowledge(!layout.knowledge)}
+            className={`p-2 rounded-lg transition-all ${layout.knowledge ? 'text-cyan-400 bg-cyan-400/10 shadow-[inset_0_0_8px_rgba(34,211,238,0.2)]' : 'text-slate-600 hover:text-slate-300'}`}
+            title="Toggle Help Panel"
+          >
+            <PanelRight size={16} />
           </button>
         </div>
 
