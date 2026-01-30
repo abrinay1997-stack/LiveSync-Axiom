@@ -98,7 +98,6 @@ export class AudioEngine {
         this.timeBufferMeas.set(this.timeBufferMeas.subarray(sr.length));
         this.timeBufferMeas.set(sr, this.timeBufferMeas.length - sr.length);
 
-        // Si estamos capturando un sweep, actualizamos el Peak Hold cada vez que llega audio
         if (this.isSweepCapturing && this.sweepPeakBuffer && this.analyzerMeas) {
           const currentData = new Float32Array(this.analyzerMeas.frequencyBinCount);
           this.analyzerMeas.getFloatFrequencyData(currentData);
@@ -126,11 +125,10 @@ export class AudioEngine {
     this.isSweepCapturing = true;
   }
 
-  // Finaliza la captura del barrido y retorna el buffer acumulado.
-  // Se corrige el error de tipado al crear el nuevo Float32Array.
   public stopSweepCapture(): Float32Array {
     this.isSweepCapturing = false;
-    const finalBuffer = this.sweepPeakBuffer ? new Float32Array(this.sweepPeakBuffer) : new Float32Array(0);
+    // Corregimos aquí usando .slice() para evitar problemas de tipos en el build
+    const finalBuffer = this.sweepPeakBuffer ? this.sweepPeakBuffer.slice() : new Float32Array(0);
     this.sweepPeakBuffer = null;
     return finalBuffer;
   }

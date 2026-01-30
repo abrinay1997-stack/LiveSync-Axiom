@@ -40,13 +40,12 @@ export const useTraces = () => {
     const analyzer = audioEngine.getAnalyzer();
     if (!analyzer) return;
     
-    // Prioridad: Si hay datos de un barrido terminado, los usamos. 
-    // Si no, hacemos un snapshot instantáneo normal.
     let data: Float32Array;
     let isSweep = false;
     
-    if ((window as any).Axiom_LastSweepData) {
-      data = (window as any).Axiom_LastSweepData;
+    const lastSweep = (window as any).Axiom_LastSweepData;
+    if (lastSweep instanceof Float32Array) {
+      data = lastSweep.slice();
       delete (window as any).Axiom_LastSweepData;
       isSweep = true;
     } else {
@@ -61,9 +60,9 @@ export const useTraces = () => {
       id: Math.random().toString(36).substr(2, 9),
       name: isSweep ? `Sweep Capture ${traces.length + 1}` : `Instant ${traces.length + 1}`,
       color: isSweep ? '#22d3ee' : TRACE_COLORS[traces.length % TRACE_COLORS.length],
-      magnitudes: new Float32Array(data),
-      phase: new Float32Array(tf.phase),
-      coherence: new Float32Array(tf.coherence),
+      magnitudes: data.slice(),
+      phase: tf.phase.slice(),
+      coherence: tf.coherence.slice(),
       timestamp: Date.now(),
       visible: true,
       metadata
