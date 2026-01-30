@@ -7,8 +7,9 @@
  * Garantiza que obtenemos un ArrayBuffer puro a partir de una vista Float32Array.
  * Útil para evitar errores de SharedArrayBuffer en APIs que no los soportan.
  */
-export function toArrayBuffer(view: Float32Array): ArrayBuffer {
-  const { buffer, byteOffset, byteLength } = view;
+export function toArrayBuffer(view: Float32Array<ArrayBufferLike>): ArrayBuffer {
+  const buffer = view.buffer as ArrayBuffer;
+  const { byteOffset, byteLength } = view;
 
   // Si ya es un ArrayBuffer estándar y no está desplazado, lo usamos directamente (clonado)
   if (buffer instanceof ArrayBuffer && byteOffset === 0 && byteLength === buffer.byteLength) {

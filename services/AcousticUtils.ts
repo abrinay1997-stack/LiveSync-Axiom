@@ -21,7 +21,7 @@ export const AcousticUtils = {
    * Extrae métricas clave de una captura de magnitud.
    * Optimizado para recibir directamente la vista Float32Array.
    */
-  analyzeTrace(data: Float32Array, sampleRate: number): TraceMetadata {
+  analyzeTrace(data: Float32Array<ArrayBufferLike>, sampleRate: number): TraceMetadata {
     let maxVal = -Infinity;
     let peakIdx = 0;
     let sum = 0;
