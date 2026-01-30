@@ -2,7 +2,8 @@
 import React from 'react';
 import { 
   BarChart3, GitCompare, Timer, Settings, Activity, 
-  PanelLeft, PanelBottom, PanelRight, HelpCircle 
+  PanelLeft, PanelBottom, PanelRight, HelpCircle,
+  Home, Gauge, LifeBuoy
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -69,10 +70,24 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onT
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5 mr-4">
-          <button onClick={() => layout.setSidebar(!layout.sidebar)} className={`p-2 rounded-lg transition-all ${layout.sidebar ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`}><PanelLeft size={16} /></button>
-          <button onClick={() => layout.setBottom(!layout.bottom)} className={`p-2 rounded-lg transition-all ${layout.bottom ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`}><PanelBottom size={16} /></button>
-          <button onClick={() => layout.setKnowledge(!layout.knowledge)} className={`p-2 rounded-lg transition-all ${layout.knowledge ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`}><PanelRight size={16} /></button>
+        {/* Layout Controls */}
+        <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5">
+          <button onClick={() => layout.setSidebar(!layout.sidebar)} className={`p-2 rounded-lg transition-all ${layout.sidebar ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`} title="Toggle Sidebar"><PanelLeft size={16} /></button>
+          <button onClick={() => layout.setBottom(!layout.bottom)} className={`p-2 rounded-lg transition-all ${layout.bottom ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`} title="Toggle Controls"><PanelBottom size={16} /></button>
+          <button onClick={() => layout.setKnowledge(!layout.knowledge)} className={`p-2 rounded-lg transition-all ${layout.knowledge ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`} title="Toggle Knowledge Base"><PanelRight size={16} /></button>
+        </div>
+
+        {/* Ecosistema Links */}
+        <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5 ml-2 mr-4">
+          <a href="https://livesyncpro.com/" target="_blank" rel="noopener noreferrer" className="p-2 text-slate-600 hover:text-white transition-colors" title="LiveSync Home">
+            <Home size={16} />
+          </a>
+          <a href="https://spl.livesyncpro.com/" target="_blank" rel="noopener noreferrer" className="p-2 text-slate-600 hover:text-cyan-400 transition-colors border-l border-white/5" title="SPL Meter Tool">
+            <Gauge size={16} />
+          </a>
+          <a href="https://support.livesyncpro.com/#chat" target="_blank" rel="noopener noreferrer" className="p-2 text-slate-600 hover:text-purple-400 transition-colors border-l border-white/5" title="Technical Support">
+            <LifeBuoy size={16} />
+          </a>
         </div>
 
         <button onClick={onOpenConfig} className="p-2 text-slate-500 hover:text-white transition-colors mr-2"><Settings size={18} /></button>
