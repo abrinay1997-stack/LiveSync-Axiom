@@ -1,6 +1,5 @@
 
 import { AudioEngine } from './AudioEngine';
-import { WatermarkEngine } from './WatermarkEngine';
 import { AcousticUtils } from './AcousticUtils';
 
 export interface TestResult {
@@ -17,7 +16,6 @@ export interface TestResult {
 export class TestRunner {
   public static async runAll(): Promise<TestResult[]> {
     const results: TestResult[] = [];
-    const startTime = performance.now();
 
     const runTest = async (name: string, fn: () => void | Promise<void>) => {
       const start = performance.now();
@@ -37,18 +35,7 @@ export class TestRunner {
       if (isNaN(output[512])) throw new Error('El suavizado produjo valores NaN');
     });
 
-    // 2. Test de Watermarking (Embed -> Extract)
-    await runTest('Security: Watermark Resilience', () => {
-      const buffer = new Float32Array(4096).map(() => Math.random() * 2 - 1);
-      const key = 9999;
-      const alpha = 0.1; // Alpha alto para el test
-      const watermarked = WatermarkEngine.embed(buffer, alpha, key);
-      const score = WatermarkEngine.extract(watermarked, key);
-      
-      if (score < 1) throw new Error(`Fallo de detección. Score: ${score.toFixed(4)} (Esperado > 1)`);
-    });
-
-    // 3. Test de Utilidades Acústicas
+    // 2. Test de Utilidades Acústicas
     await runTest('Acoustics: Conversion Math', () => {
       const samples = 480; // 10ms a 48kHz
       const ms = AcousticUtils.samplesToMs(samples, 48000);
@@ -58,7 +45,6 @@ export class TestRunner {
       if (Math.abs(meters - 3.43) > 0.01) throw new Error(`Error en metros: ${meters} (Esperado ~3.43)`);
     });
 
-    console.table(results);
     return results;
   }
 }

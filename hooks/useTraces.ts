@@ -40,21 +40,27 @@ export const useTraces = () => {
     const analyzer = audioEngine.getAnalyzer();
     if (!analyzer) return;
     
-    // Captura RTA (Magnitud)
-    const data = new Float32Array(analyzer.frequencyBinCount);
-    analyzer.getFloatFrequencyData(data);
+    // Prioridad: Si hay datos de un barrido terminado, los usamos. 
+    // Si no, hacemos un snapshot instantáneo normal.
+    let data: Float32Array;
+    let isSweep = false;
     
-    // Captura TF (Fase y Coherencia) si están disponibles
-    // El motor calcula esto en tiempo real, así que lo solicitamos para el snapshot
+    if ((window as any).Axiom_LastSweepData) {
+      data = (window as any).Axiom_LastSweepData;
+      delete (window as any).Axiom_LastSweepData;
+      isSweep = true;
+    } else {
+      data = new Float32Array(analyzer.frequencyBinCount);
+      analyzer.getFloatFrequencyData(data);
+    }
+    
     const tf = audioEngine.getTransferFunction('none');
-    
-    // Analizar datos antes de guardar para el metadata del sidebar
     const metadata = AcousticUtils.analyzeTrace(data, 48000);
     
     const newTrace: TraceData = {
       id: Math.random().toString(36).substr(2, 9),
-      name: `Capture ${traces.length + 1}`,
-      color: TRACE_COLORS[traces.length % TRACE_COLORS.length],
+      name: isSweep ? `Sweep Capture ${traces.length + 1}` : `Instant ${traces.length + 1}`,
+      color: isSweep ? '#22d3ee' : TRACE_COLORS[traces.length % TRACE_COLORS.length],
       magnitudes: new Float32Array(data),
       phase: new Float32Array(tf.phase),
       coherence: new Float32Array(tf.coherence),

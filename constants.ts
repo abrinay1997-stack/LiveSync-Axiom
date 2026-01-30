@@ -28,9 +28,10 @@ export const DEFAULT_CONFIG: MeasurementConfig = {
   averagingCount: 8,
   minFreq: 20,
   maxFreq: 20000,
-  minDb: -80, // Subimos el suelo visual por defecto
-  maxDb: 10,
-  visualGain: 0, // Ganancia extra de 0dB por defecto
+  minDb: -110, 
+  maxDb: 0,    
+  visualGain: 0, 
+  tld: 3, // Target Landscape Distance por defecto actualizado a 3 dB
   showPhase: true,
   showCoherence: true
 };

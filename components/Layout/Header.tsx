@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { 
-  BarChart3, GitCompare, ShieldAlert, Timer, Settings, Activity, 
+  BarChart3, GitCompare, Timer, Settings, Activity, 
   PanelLeft, PanelBottom, PanelRight, HelpCircle 
 } from 'lucide-react';
 
@@ -43,8 +43,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onT
           {[
             { id: 'rta', icon: <BarChart3 size={12} />, label: 'RTA' },
             { id: 'tf', icon: <GitCompare size={12} />, label: 'Transfer' },
-            { id: 'impulse', icon: <Timer size={12} />, label: 'Impulse' },
-            { id: 'security', icon: <ShieldAlert size={12} />, label: 'Security' }
+            { id: 'impulse', icon: <Timer size={12} />, label: 'Impulse' }
           ].map((tab) => (
             <div key={tab.id} className="flex items-center relative group/tab">
               <button 
@@ -70,47 +69,14 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onT
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Layout Toggles (DAW Style) */}
         <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5 mr-4">
-          <button 
-            onClick={() => layout.setSidebar(!layout.sidebar)}
-            className={`p-2 rounded-lg transition-all ${layout.sidebar ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`}
-            title="Toggle Left Sidebar"
-          >
-            <PanelLeft size={16} />
-          </button>
-          <button 
-            onClick={() => layout.setBottom(!layout.bottom)}
-            className={`p-2 rounded-lg transition-all ${layout.bottom ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`}
-            title="Toggle Bottom Panel"
-          >
-            <PanelBottom size={16} />
-          </button>
-          <button 
-            onClick={() => layout.setKnowledge(!layout.knowledge)}
-            className={`p-2 rounded-lg transition-all ${layout.knowledge ? 'text-cyan-400 bg-cyan-400/10 shadow-[inset_0_0_8px_rgba(34,211,238,0.2)]' : 'text-slate-600 hover:text-slate-300'}`}
-            title="Toggle Help Panel"
-          >
-            <PanelRight size={16} />
-          </button>
+          <button onClick={() => layout.setSidebar(!layout.sidebar)} className={`p-2 rounded-lg transition-all ${layout.sidebar ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`}><PanelLeft size={16} /></button>
+          <button onClick={() => layout.setBottom(!layout.bottom)} className={`p-2 rounded-lg transition-all ${layout.bottom ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`}><PanelBottom size={16} /></button>
+          <button onClick={() => layout.setKnowledge(!layout.knowledge)} className={`p-2 rounded-lg transition-all ${layout.knowledge ? 'text-cyan-400 bg-cyan-400/10' : 'text-slate-600 hover:text-slate-300'}`}><PanelRight size={16} /></button>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-black rounded-lg border border-white/5 mr-2 h-9">
-           <Activity size={12} className={isStarted ? "text-emerald-500 animate-pulse" : "text-slate-700"} />
-           <span className="text-[9px] mono font-bold text-slate-500 uppercase">Input Sync</span>
-        </div>
-
-        <button 
-          onClick={onOpenConfig}
-          className="p-2 text-slate-500 hover:text-white transition-colors mr-2"
-        >
-          <Settings size={18} />
-        </button>
-        
-        <button 
-          onClick={onToggleEngine}
-          className={`px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${isStarted ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white' : 'bg-white text-black hover:bg-cyan-400'}`}
-        >
+        <button onClick={onOpenConfig} className="p-2 text-slate-500 hover:text-white transition-colors mr-2"><Settings size={18} /></button>
+        <button onClick={onToggleEngine} className={`px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${isStarted ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white' : 'bg-white text-black hover:bg-cyan-400'}`}>
           {isStarted ? 'STOP ENGINE' : 'RUN ENGINE'}
         </button>
       </div>

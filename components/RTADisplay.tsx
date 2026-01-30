@@ -23,12 +23,16 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
     const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
     
     const freq = Math.pow(10, (x / canvas.width) * (Math.log10(20000) - Math.log10(20)) + Math.log10(20));
+    
+    // El hover debe mostrar el valor compensado para ser consistente con lo que se ve
+    const octaves = Math.log2(freq / 1000);
+    const tilt = octaves * config.tld;
     const db = config.maxDb - (y / canvas.height) * (config.maxDb - config.minDb);
     
-    const octaves = Math.log2(freq / 16.35);
-    const noteIdx = Math.round((octaves % 1) * 12) % 12;
+    const noteOctaves = Math.log2(freq / 16.35);
+    const noteIdx = Math.round((noteOctaves % 1) * 12) % 12;
     const note = NOTE_FREQS[noteIdx]?.n || '';
-    const octaveNum = Math.floor(octaves);
+    const octaveNum = Math.floor(noteOctaves);
 
     setHoverData({ freq, db, note: `${note}${octaveNum}`, lambda: 343 / freq, show: true });
   };
@@ -65,17 +69,23 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = isLive ? 2.5 : 1.5;
-        ctx.globalAlpha = isLive ? 1 : 0.6; // Snapshots un poco más tenues
+        ctx.globalAlpha = isLive ? 1 : 0.6;
 
         let first = true;
-        for (let i = 0; i < magnitudes.length; i++) {
-          const binFreq = (i * 48000) / (magnitudes.length * 2);
+        const totalBins = magnitudes.length;
+        
+        for (let i = 0; i < totalBins; i++) {
+          const binFreq = (i * 48000) / (totalBins * 2);
           if (binFreq < 18 || binFreq > 22000) continue;
+          
           const x = (Math.log10(binFreq) - Math.log10(20)) / (Math.log10(20000) - Math.log10(20)) * width;
           
-          // Importante: Aplicamos la ganancia visual actual a los snapshots guardados
-          // para que se alineen con lo que el usuario está viendo en vivo
-          const magValue = magnitudes[i] + config.visualGain;
+          // Aplicamos TLD (Inclinación de Paisaje)
+          // El pivote es 1000 Hz
+          const octaves = Math.log2(binFreq / 1000);
+          const tilt = octaves * config.tld;
+          
+          const magValue = magnitudes[i] + config.visualGain + tilt;
           const y = (config.maxDb - magValue) / (config.maxDb - config.minDb) * height;
           
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
@@ -84,15 +94,15 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
         ctx.globalAlpha = 1;
       };
 
-      // 1. Dibujar Snapshots guardados primero (debajo de la traza en vivo)
+      // 1. Dibujar Snapshots
       traces.filter(t => t.visible).forEach(t => {
         drawTrace(t.magnitudes, t.color, false);
       });
 
       // 2. Dibujar Traza en Vivo
       if (isActive) {
-        // En vivo ya viene con ganancia visual del motor
-        const dataMeas = audioEngine.getProcessedData(config.smoothing, config.averaging, false, config.visualGain);
+        // Obtenemos datos crudos y aplicamos TLD en el renderizado
+        const dataMeas = audioEngine.getProcessedData(config.smoothing, config.averaging, false, 0);
         drawTrace(dataMeas, COLORS.primary, true);
       }
       
@@ -100,9 +110,8 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
     };
     render();
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [config, isActive, traces]); // Añadido traces a las dependencias
+  }, [config, isActive, traces]);
 
-  // Generar etiquetas de dB laterales según el rango actual
   const dbLabels = [];
   for (let db = config.maxDb; db >= config.minDb; db -= 10) dbLabels.push(db);
 
@@ -124,12 +133,17 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
             </div>
          </div>
          <div className="flex gap-4 items-center">
-            {config.visualGain !== 0 && (
-              <span className="text-[9px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 uppercase">
-                Visual Gain: +{config.visualGain}dB
+            {config.tld !== 0 && (
+              <span className="text-[9px] font-black text-cyan-400 bg-cyan-400/10 px-2 py-0.5 rounded border border-cyan-400/20 uppercase">
+                TLD: {config.tld} dB/Oct
               </span>
             )}
-            <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest">RTA | FFT 4K</span>
+            {config.visualGain !== 0 && (
+              <span className="text-[9px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 uppercase">
+                Gain: +{config.visualGain}dB
+              </span>
+            )}
+            <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest">RTA Analyzer</span>
          </div>
       </div>
 
@@ -143,7 +157,6 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
           onMouseLeave={() => setHoverData(prev => ({ ...prev, show: false }))}
         />
         
-        {/* Marcadores Laterales dB Dinámicos */}
         <div className="absolute left-2 top-0 h-full flex flex-col justify-between py-4 text-[8px] mono text-slate-700 font-bold pointer-events-none">
            {dbLabels.map(db => <span key={db}>{db}</span>)}
         </div>

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, BookOpen, HelpCircle, ArrowRight, Mic, Cable, Play, Info } from 'lucide-react';
+import { X, BookOpen, HelpCircle, ArrowRight, Mic, Cable, Play, Info, Waves, Zap } from 'lucide-react';
 
 interface KnowledgeBaseProps {
   activeTab: string;
@@ -17,37 +17,37 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ activeTab, isOpen, onClos
         return {
           title: 'Real Time Analyzer (RTA)',
           steps: [
+            'Usa PINK NOISE para una respuesta de frecuencia constante por octava.',
             'Conecta tu micrófono de medición al Canal 2.',
             'Presiona "RUN ENGINE" para iniciar la captura.',
-            'Ajusta el "Visual Gain" si la señal es muy baja.',
-            'Usa "Smoothing" (1/3 o 1/6) para ver el balance tonal general.'
+            'Ajusta el "Visual Gain" para alinear la traza con el suelo de ruido.'
           ],
-          tips: 'El RTA mide energía. Es ideal para ver el balance tonal, pero no te dirá nada sobre el tiempo o la fase.',
-          setup: 'Mic -> Input 2'
+          tips: 'El RTA es ideal para ajustes tonales rápidos y balance de EQ general usando ruido rosa.',
+          setup: 'Pink Noise -> Speaker -> Mic'
         };
       case 'tf':
         return {
           title: 'Transfer Function (TF)',
           steps: [
-            'Loopback: Conecta la salida de tu consola al Canal 1 (Referencia).',
-            'Medición: Conecta tu micrófono al Canal 2.',
-            'Presiona "FIND DELAY" para sincronizar ambos canales.',
-            'Observa la COHERENCIA: Si las barras son bajas, no confíes en la curva.'
+            'Loopback: Salida Consola -> Canal 1 (Referencia).',
+            'Medición: Micrófono -> Canal 2 (Medición).',
+            'Usa PINK NOISE para comparar espectros en tiempo real.',
+            'Busca una COHERENCIA alta para validar que el ruido rosa llega limpio al micro.'
           ],
-          tips: 'La fase (violeta) es clave para alinear subs con tops. Busca que las líneas coincidan en el crossover.',
-          setup: 'Consola (L) -> Ch1 | Mic -> Ch2'
+          tips: 'La transferencia te permite ver la "huella" del sistema restando la influencia de la música o el ruido.',
+          setup: 'Pink Noise + Reference Loop'
         };
       case 'impulse':
         return {
           title: 'Impulse Response (IR)',
           steps: [
-            'Genera Ruido Rosa desde el "Signal Gen".',
-            'Presiona "D" para capturar la respuesta al impulso.',
-            'Observa el "Direct Arrival" para calcular distancias reales.',
-            'Analiza C80 para música y D50 para claridad de voz.'
+            'Usa SINE SWEEP para máxima precisión y rechazo de ruido.',
+            'Presiona "D" justo antes de lanzar el barrido.',
+            'El barrido logarítmico (20-20k) capturará reflexiones exactas.',
+            'Analiza el gráfico ETC para ver rebotes en paredes o techos.'
           ],
-          tips: 'La curva ETC (Cyan) te ayuda a identificar reflexiones dañinas de paredes o techos.',
-          setup: 'Pink Noise -> Speaker -> Mic'
+          tips: 'El Sine Sweep tiene una relación señal/ruido mucho mayor que el ruido rosa para medir acústica de salas.',
+          setup: 'Sine Sweep -> Room -> Mic'
         };
       default:
         return {
@@ -94,17 +94,23 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ activeTab, isOpen, onClos
 
         <section className="p-4 bg-white/5 rounded-2xl border border-white/5">
           <div className="flex items-center gap-2 mb-3">
-            <Cable size={14} className="text-purple-400" />
-            <span className="text-[9px] font-black text-slate-500 uppercase">Hardware Setup</span>
+            <Waves size={14} className="text-purple-400" />
+            <span className="text-[9px] font-black text-slate-500 uppercase">Acoustic Signal Path</span>
           </div>
-          <div className="flex items-center justify-center gap-4 py-2">
-             <div className="flex flex-col items-center gap-1 opacity-60">
-                <Mic size={16} />
-                <span className="text-[8px] mono">INPUT</span>
+          <div className="flex flex-col gap-3">
+             <div className="flex items-center justify-between p-2 bg-black/40 rounded-lg border border-white/5">
+                <div className="flex items-center gap-2">
+                   <Waves size={12} className="text-emerald-400" />
+                   <span className="text-[9px] mono text-slate-300">Pink Noise</span>
+                </div>
+                <span className="text-[8px] text-slate-500 uppercase">Steady State</span>
              </div>
-             <ArrowRight size={12} className="text-slate-700" />
-             <div className="bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded text-[10px] font-bold text-cyan-400 mono">
-                {content.setup}
+             <div className="flex items-center justify-between p-2 bg-black/40 rounded-lg border border-white/5">
+                <div className="flex items-center gap-2">
+                   <Zap size={12} className="text-cyan-400" />
+                   <span className="text-[9px] mono text-slate-300">Sine Sweep</span>
+                </div>
+                <span className="text-[8px] text-slate-500 uppercase">Acoustic IR</span>
              </div>
           </div>
         </section>

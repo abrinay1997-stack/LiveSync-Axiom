@@ -17,7 +17,8 @@ export interface MeasurementConfig {
   maxFreq: number;
   minDb: number;
   maxDb: number;
-  visualGain: number; // Ganancia digital solo para visualización (dB)
+  visualGain: number; 
+  tld: number; // Target Landscape Distance (dB/octave)
   showPhase: boolean;
   showCoherence: boolean;
 }

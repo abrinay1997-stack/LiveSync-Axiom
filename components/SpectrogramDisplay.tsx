@@ -31,8 +31,8 @@ const SpectrogramDisplay: React.FC<SpectrogramProps> = ({ config, isActive }) =>
 
     const render = () => {
       if (isActive && bCtx) {
-        // En el espectrograma aplicamos la ganancia visual para resaltar eventos débiles
-        const data = audioEngine.getProcessedData('none', 'None', false, config.visualGain);
+        // Obtenemos datos sin ganancia visual y la aplicamos aquí junto al TLD
+        const data = audioEngine.getProcessedData('none', 'None', false, 0);
         if (data.length > 0) {
           bCtx.drawImage(canvas, 0, 0);
           ctx.drawImage(bufferCanvas, 0, 1);
@@ -41,9 +41,12 @@ const SpectrogramDisplay: React.FC<SpectrogramProps> = ({ config, isActive }) =>
           for (let x = 0; x < canvas.width; x++) {
             const freq = Math.pow(10, (x / canvas.width) * (Math.log10(20000) - Math.log10(20)) + Math.log10(20));
             const binIndex = Math.floor((freq * 4096) / 48000);
-            const val = data[binIndex] || config.minDb;
             
-            // Normalizar basado en el rango visual definido en config
+            // Aplicar TLD + Visual Gain
+            const octaves = Math.log2(freq / 1000);
+            const tilt = octaves * config.tld;
+            const val = (data[binIndex] || config.minDb) + config.visualGain + tilt;
+            
             const range = config.maxDb - config.minDb;
             const norm = Math.min(1, Math.max(0, (val - config.minDb) / range));
             const hex = getMagmaColor(norm);
@@ -74,8 +77,9 @@ const SpectrogramDisplay: React.FC<SpectrogramProps> = ({ config, isActive }) =>
       <div className="absolute right-3 top-0 h-full flex flex-col justify-between py-2 text-[7px] mono font-bold text-white/10 uppercase pointer-events-none">
         <span>NOW</span><span>-5S</span><span>-10S</span><span>-15S</span>
       </div>
-      <div className="absolute bottom-2 left-4 px-3 py-1 bg-black/40 backdrop-blur-md rounded-lg border border-white/5">
-        <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">HD Waterfall Analyzer</span>
+      <div className="absolute bottom-2 left-4 px-3 py-1 bg-black/40 backdrop-blur-md rounded-lg border border-white/5 flex gap-3 items-center">
+        <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Waterfall</span>
+        {config.tld !== 0 && <span className="text-[7px] mono text-cyan-400 font-bold">TLD: {config.tld} dB/Oct</span>}
       </div>
     </div>
   );

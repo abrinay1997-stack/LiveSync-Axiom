@@ -1,8 +1,9 @@
 
 import React, { useRef, useState } from 'react';
-import { X, Settings2, Sliders, FileJson, Upload, Trash2, Database, Activity, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Settings2, Sliders, FileJson, Upload, Trash2, Database, Activity, ShieldCheck, AlertCircle, Loader2, Compass } from 'lucide-react';
 import DeviceSelector from './DeviceSelector';
 import { TestRunner, TestResult } from '../services/TestRunner';
+import { useMeasurement } from '../context/MeasurementContext';
 
 interface ConfigModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
   sessionActions
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { config, updateConfig } = useMeasurement();
   const [testResults, setTestResults] = useState<TestResult[] | null>(null);
   const [isRunningTests, setIsRunningTests] = useState(false);
 
@@ -40,6 +42,8 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
     setTestResults(results);
     setIsRunningTests(false);
   };
+
+  const tldOptions = [0, 1.5, 3, 4.5, 6];
 
   if (!isOpen) return null;
 
@@ -66,10 +70,36 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
           </div>
 
           <div className="space-y-10">
+            {/* TLD SETTING */}
+            <div className="space-y-5 p-6 bg-cyan-500/5 border border-cyan-500/10 rounded-3xl">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <Compass size={14} className="text-cyan-400" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Target Landscape Distance (TLD)</span>
+                </div>
+                <span className="text-[10px] mono font-bold text-cyan-400">{config.tld} dB/Oct</span>
+              </div>
+              
+              <div className="flex bg-black/60 p-1.5 rounded-2xl border border-white/10">
+                {tldOptions.map(val => (
+                  <button
+                    key={val}
+                    onClick={() => updateConfig({ tld: val })}
+                    className={`flex-1 py-3 rounded-xl text-[10px] font-black transition-all ${config.tld === val ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    {val === 0 ? 'FLAT' : `${val} dB`}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[9px] text-slate-600 px-2 italic">
+                * Adjusts the visual slope to compensate for house curves and pink noise roll-off. Pivot at 1kHz.
+              </p>
+            </div>
+
             {/* AUDIO HARDWARE */}
-            <div className="space-y-5">
+            <div className="space-y-5 pt-4">
               <div className="flex items-center gap-2 px-1">
-                <Sliders size={14} className="text-cyan-500" />
+                <Sliders size={14} className="text-slate-500" />
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Input Management</span>
               </div>
               <DeviceSelector 
