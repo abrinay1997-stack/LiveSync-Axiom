@@ -54,7 +54,9 @@ export const useTraces = () => {
     }
     
     const tf = audioEngine.getTransferFunction('none');
-    const metadata = AcousticUtils.analyzeTrace(data, 48000);
+    
+    // Aplicamos la corrección para el build de Netlify: pasamos el buffer subyacente
+    const metadata = AcousticUtils.analyzeTrace(data.buffer, 48000);
     
     const newTrace: TraceData = {
       id: Math.random().toString(36).substr(2, 9),

@@ -18,15 +18,17 @@ export const AcousticUtils = {
   },
 
   /**
-   * Extrae métricas clave de una captura de magnitud
+   * Extrae métricas clave de una captura de magnitud.
+   * Acepta ArrayBuffer para cumplir con requisitos de tipado en ciertos entornos de build.
    */
-  analyzeTrace(magnitudes: Float32Array, sampleRate: number): TraceMetadata {
+  analyzeTrace(magnitudes: Float32Array | ArrayBuffer, sampleRate: number): TraceMetadata {
+    const data = magnitudes instanceof ArrayBuffer ? new Float32Array(magnitudes) : magnitudes;
     let maxVal = -Infinity;
     let peakIdx = 0;
     let sum = 0;
 
-    for (let i = 0; i < magnitudes.length; i++) {
-      const val = magnitudes[i];
+    for (let i = 0; i < data.length; i++) {
+      const val = data[i];
       if (val > maxVal) {
         maxVal = val;
         peakIdx = i;
@@ -34,8 +36,8 @@ export const AcousticUtils = {
       sum += val;
     }
 
-    const peakFreq = (peakIdx * sampleRate) / (magnitudes.length * 2);
-    const avgLevel = sum / magnitudes.length;
+    const peakFreq = (peakIdx * sampleRate) / (data.length * 2);
+    const avgLevel = sum / data.length;
 
     return { peakFreq, avgLevel };
   },
