@@ -5,23 +5,18 @@ import Sidebar from './components/Layout/Sidebar';
 import Footer from './components/Layout/Footer';
 import MainStage from './components/Layout/MainStage';
 import ConfigModal from './components/ConfigModal';
-import { useAudioSystem } from './hooks/useAudioSystem';
-import { useTraces } from './hooks/useTraces';
+import { MeasurementProvider, useMeasurement } from './context/MeasurementContext';
 import { useHotkeys } from './hooks/useHotkeys';
-import { useMeasurementConfig } from './hooks/useMeasurementConfig';
-import { useAcousticAnalyzer } from './hooks/useAcousticAnalyzer';
 
-const App: React.FC = () => {
-  const { isStarted, devices, selectedDevice, setSelectedDevice, toggleEngine, refreshDevices } = useAudioSystem();
+const AppContent: React.FC = () => {
   const { 
-    traces, captureTrace, deleteTrace, renameTrace, clearAllTraces, toggleTraceVisibility, exportSession, importSession
-  } = useTraces();
-  const { config, setSmoothing, updateConfig } = useMeasurementConfig();
-  
-  const analysis = useAcousticAnalyzer(isStarted);
+    audioSystem, traces, captureTrace, analysis, config, 
+    clearAllTraces, exportSession, importSession 
+  } = useMeasurement();
 
   const [activeTab, setActiveTab] = useState<'rta' | 'tf' | 'impulse' | 'security'>('rta');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [bottomOpen, setBottomOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(false);
 
   useHotkeys({
@@ -42,43 +37,32 @@ const App: React.FC = () => {
       <Header 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
-        isStarted={isStarted} 
-        onToggleEngine={toggleEngine}
+        isStarted={audioSystem.isStarted} 
+        onToggleEngine={audioSystem.toggleEngine}
         onOpenConfig={() => setConfigOpen(true)}
+        layout={{
+          sidebar: sidebarOpen,
+          bottom: bottomOpen,
+          setSidebar: setSidebarOpen,
+          setBottom: setBottomOpen
+        }}
       />
 
       <main className="flex-1 flex overflow-hidden">
-        <Sidebar 
-          isOpen={sidebarOpen} 
-          traces={traces} 
-          onCapture={captureTrace} 
-          onDelete={deleteTrace}
-          onRename={renameTrace}
-          onToggleVisibility={toggleTraceVisibility}
-          isEngineStarted={isStarted}
-        />
-
-        <MainStage 
-          activeTab={activeTab}
-          isStarted={isStarted}
-          config={config}
-          traces={traces}
-          setSmoothing={setSmoothing}
-          updateConfig={updateConfig}
-          analysis={analysis}
-        />
+        {sidebarOpen && <Sidebar isOpen={sidebarOpen} />}
+        <MainStage activeTab={activeTab} bottomVisible={bottomOpen} />
       </main>
 
-      <Footer isStarted={isStarted} />
+      <Footer isStarted={audioSystem.isStarted} />
 
       <ConfigModal 
         isOpen={configOpen}
         onClose={() => setConfigOpen(false)}
-        devices={devices}
-        selectedDevice={selectedDevice}
-        onSelectDevice={setSelectedDevice}
-        onRefreshDevices={refreshDevices}
-        isEngineStarted={isStarted}
+        devices={audioSystem.devices}
+        selectedDevice={audioSystem.selectedDevice}
+        onSelectDevice={audioSystem.setSelectedDevice}
+        onRefreshDevices={audioSystem.refreshDevices}
+        isEngineStarted={audioSystem.isStarted}
         sessionActions={{
           exportSession,
           importSession,
@@ -89,5 +73,11 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+const App: React.FC = () => (
+  <MeasurementProvider>
+    <AppContent />
+  </MeasurementProvider>
+);
 
 export default App;

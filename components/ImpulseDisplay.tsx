@@ -134,7 +134,10 @@ const ImpulseDisplay: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                <div className="flex flex-col justify-center gap-1 border-r border-white/5 pr-4">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black text-emerald-500 uppercase">C80 Clarity</span>
-                    <Info size={10} className="text-slate-600" title="Claridad para música (>0dB es bueno)"/>
+                    {/* Fix: Moved title to a wrapping span as Lucide icons do not accept title directly in this environment */}
+                    <span title="Claridad para música (>0dB es bueno)" className="cursor-help">
+                      <Info size={10} className="text-slate-600" />
+                    </span>
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-white mono">{audioEngine.acousticMetrics.c80}</span>
@@ -144,7 +147,10 @@ const ImpulseDisplay: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                <div className="flex flex-col justify-center gap-1">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black text-cyan-400 uppercase">D50 Definition</span>
-                    <Info size={10} className="text-slate-600" title="Definición de voz (>50% es inteligible)"/>
+                    {/* Fix: Moved title to a wrapping span as Lucide icons do not accept title directly in this environment */}
+                    <span title="Definición de voz (>50% es inteligible)" className="cursor-help">
+                      <Info size={10} className="text-slate-600" />
+                    </span>
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-white mono">{audioEngine.acousticMetrics.d50}</span>
