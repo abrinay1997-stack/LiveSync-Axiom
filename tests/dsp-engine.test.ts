@@ -88,6 +88,34 @@ describe('DSPEngine', () => {
       dsp.fftSize = 4096;
       expect(dsp.fftSize).toBe(4096);
     });
+
+    it('RTA level is consistent across different FFT sizes (normalization)', () => {
+      // A 1kHz sine at the same amplitude should produce similar dB readings
+      // regardless of FFT size, thanks to N² normalization.
+      const amplitude = 0.5;
+      const levels: number[] = [];
+
+      for (const size of [1024, 2048, 4096, 8192]) {
+        const engine = new DSPEngine(32768);
+        engine.fftSize = size;
+        engine.setWindow('hann');
+        engine.setAveraging('None', 1);
+
+        const signal = makeSine(1000, size, 48000, amplitude);
+        engine.pushSamples(signal, signal);
+        engine.processBlock(size);
+
+        const rta = engine.getRTAData('none', false, 0);
+        // Find the bin closest to 1kHz
+        const bin1k = Math.round((1000 * size) / 48000);
+        levels.push(rta[bin1k]);
+      }
+
+      // All levels should be within 3dB of each other (window effects cause small differences)
+      const maxLevel = Math.max(...levels);
+      const minLevel = Math.min(...levels);
+      expect(maxLevel - minLevel).toBeLessThan(3);
+    });
   });
 
   describe('Block processing', () => {

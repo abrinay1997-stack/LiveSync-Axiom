@@ -170,8 +170,11 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
           onMouseLeave={() => setHoverData(prev => ({ ...prev, show: false }))}
         />
 
-        <div className="absolute left-2 top-0 h-full flex flex-col justify-between py-4 text-[8px] mono text-slate-700 font-bold pointer-events-none">
-           {dbLabels.map(db => <span key={db}>{db}</span>)}
+        <div className="absolute left-2 top-0 w-10 h-full pointer-events-none">
+           {dbLabels.map(db => {
+             const pct = ((config.maxDb - db) / (config.maxDb - config.minDb)) * 100;
+             return <span key={db} className="absolute text-[8px] mono text-slate-700 font-bold" style={{ top: `${pct}%`, transform: 'translateY(-50%)' }}>{db}</span>;
+           })}
         </div>
       </div>
     </div>

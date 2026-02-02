@@ -612,9 +612,13 @@ export class DSPEngine {
     const data = isRef ? acc.rtaRef : acc.rtaMeas;
     const out = new Float32Array(bins);
 
+    // Normalization: raw FFT power |X[k]|² scales with N².
+    // Subtract 20*log10(N) to get amplitude-normalized dBFS.
+    const normDb = 20 * Math.log10(fftSize);
+
     // Convert linear power to dB and apply mic calibration
     for (let i = 0; i < bins; i++) {
-      out[i] = data[i] > 1e-30 ? 10 * Math.log10(data[i]) : -150;
+      out[i] = data[i] > 1e-30 ? 10 * Math.log10(data[i]) - normDb : -150;
       // Apply mic calibration correction (only on meas channel)
       if (!isRef && this.micCalCurve && i < this.micCalCurve.length) {
         out[i] += this.micCalCurve[i];
