@@ -19,16 +19,15 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
-    const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
-    
-    const freq = Math.pow(10, (x / canvas.width) * (Math.log10(20000) - Math.log10(20)) + Math.log10(20));
-    
-    // El hover debe mostrar el valor compensado para ser consistente con lo que se ve
-    const octaves = Math.log2(freq / 1000);
-    const tilt = octaves * config.tld;
-    const db = config.maxDb - (y / canvas.height) * (config.maxDb - config.minDb);
-    
+    const dpr = window.devicePixelRatio || 1;
+    const x = ((e.clientX - rect.left) / rect.width) * (canvas.width / dpr);
+    const y = ((e.clientY - rect.top) / rect.height) * (canvas.height / dpr);
+    const width = canvas.width / dpr;
+    const height = canvas.height / dpr;
+
+    const freq = Math.pow(10, (x / width) * (Math.log10(20000) - Math.log10(20)) + Math.log10(20));
+    const db = config.maxDb - (y / height) * (config.maxDb - config.minDb);
+
     const noteOctaves = Math.log2(freq / 16.35);
     const noteIdx = Math.round((noteOctaves % 1) * 12) % 12;
     const note = NOTE_FREQS[noteIdx]?.n || '';
@@ -43,12 +42,28 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
+    // DPI awareness
+    const setupDPI = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { width: rect.width, height: rect.height };
+    };
+
+    let dims = setupDPI();
+
     const render = () => {
-      const { width, height } = canvas;
+      const { width, height } = dims;
+
+      // Drive DSP processing
+      if (isActive) audioEngine.processFrame();
+
       ctx.fillStyle = COLORS.bg;
       ctx.fillRect(0, 0, width, height);
 
-      // Grid sutil (Vertical - dB)
+      // Grid (dB)
       ctx.strokeStyle = 'rgba(255,255,255,0.03)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -56,13 +71,14 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
         const y = (config.maxDb - db) / (config.maxDb - config.minDb) * height;
         ctx.moveTo(0, y); ctx.lineTo(width, y);
       }
-      
-      // Grid sutil (Horizontal - Freq)
+      // Grid (Freq)
       LOG_FREQUENCIES.forEach(f => {
         const x = (Math.log10(f) - Math.log10(20)) / (Math.log10(20000) - Math.log10(20)) * width;
         ctx.moveTo(x, 0); ctx.lineTo(x, height);
       });
       ctx.stroke();
+
+      const fftSize = config.fftSize;
 
       const drawTrace = (magnitudes: Float32Array, color: string, isLive: boolean) => {
         if (!magnitudes || magnitudes.length === 0) return;
@@ -73,39 +89,37 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
 
         let first = true;
         const totalBins = magnitudes.length;
-        
+
         for (let i = 0; i < totalBins; i++) {
-          const binFreq = (i * 48000) / (totalBins * 2);
+          const binFreq = (i * 48000) / fftSize;
           if (binFreq < 18 || binFreq > 22000) continue;
-          
+
           const x = (Math.log10(binFreq) - Math.log10(20)) / (Math.log10(20000) - Math.log10(20)) * width;
-          
-          // Aplicamos TLD (Inclinación de Paisaje)
-          // El pivote es 1000 Hz
+
+          // TLD tilt (pivot at 1kHz)
           const octaves = Math.log2(binFreq / 1000);
           const tilt = octaves * config.tld;
-          
+
           const magValue = magnitudes[i] + config.visualGain + tilt;
           const y = (config.maxDb - magValue) / (config.maxDb - config.minDb) * height;
-          
+
           if (first) { ctx.moveTo(x, y); first = false; } else { ctx.lineTo(x, y); }
         }
         ctx.stroke();
         ctx.globalAlpha = 1;
       };
 
-      // 1. Dibujar Snapshots
+      // 1. Draw Snapshots
       traces.filter(t => t.visible).forEach(t => {
         drawTrace(t.magnitudes, t.color, false);
       });
 
-      // 2. Dibujar Traza en Vivo
+      // 2. Draw Live Trace
       if (isActive) {
-        // Obtenemos datos crudos y aplicamos TLD en el renderizado
         const dataMeas = audioEngine.getProcessedData(config.smoothing, config.averaging, false, 0);
         drawTrace(dataMeas, COLORS.primary, true);
       }
-      
+
       rafRef.current = requestAnimationFrame(render);
     };
     render();
@@ -148,15 +162,14 @@ const RTADisplay: React.FC<RTADisplayProps> = ({ config, isActive, traces }) => 
       </div>
 
       <div className="flex-1 relative">
-        <canvas 
-          ref={canvasRef} 
-          width={1920} 
-          height={1080} 
-          className="w-full h-full object-fill"
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full"
+          style={{ display: 'block' }}
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setHoverData(prev => ({ ...prev, show: false }))}
         />
-        
+
         <div className="absolute left-2 top-0 h-full flex flex-col justify-between py-4 text-[8px] mono text-slate-700 font-bold pointer-events-none">
            {dbLabels.map(db => <span key={db}>{db}</span>)}
         </div>

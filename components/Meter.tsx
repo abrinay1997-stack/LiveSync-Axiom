@@ -9,22 +9,9 @@ const Meter: React.FC = () => {
 
   useEffect(() => {
     const update = () => {
-      const aRef = audioEngine.getRefAnalyzer();
-      const aMeas = audioEngine.getAnalyzer();
-
-      const getLevel = (analyzer: AnalyserNode | null) => {
-        if (!analyzer) return -100;
-        const data = new Float32Array(analyzer.frequencyBinCount);
-        analyzer.getFloatFrequencyData(data);
-        let max = -Infinity;
-        // Peak detection is better for meters
-        for(let i=0; i<data.length; i++) if(data[i] > max) max = data[i];
-        return max;
-      };
-
       setLevels({
-        ref: getLevel(aRef),
-        meas: getLevel(aMeas)
+        ref: audioEngine.getPeakLevel(true),
+        meas: audioEngine.getPeakLevel(false)
       });
       rafRef.current = requestAnimationFrame(update);
     };
@@ -53,12 +40,10 @@ const Meter: React.FC = () => {
             <span className={levels.meas > -3 ? 'text-rose-500' : 'text-cyan-400'}>{levels.meas.toFixed(1)} dB</span>
           </div>
           <div className="h-2 bg-black rounded-sm overflow-hidden border border-white/5 relative">
-             {/* Peak Indicator */}
-            <div 
+            <div
               className={`h-full transition-all duration-75 ${levels.meas > -3 ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'bg-cyan-500 shadow-[0_0_10px_rgba(34,211,238,0.3)]'}`}
               style={{ width: `${getPercent(levels.meas)}%` }}
             />
-            {/* Graticule */}
             <div className="absolute inset-0 flex justify-between px-1 opacity-20 pointer-events-none">
                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => <div key={i} className="w-px h-full bg-white" />)}
             </div>
@@ -72,7 +57,7 @@ const Meter: React.FC = () => {
             <span className="text-slate-400">{levels.ref.toFixed(1)} dB</span>
           </div>
           <div className="h-2 bg-black rounded-sm overflow-hidden border border-white/5 relative">
-            <div 
+            <div
               className="h-full bg-white/20 transition-all duration-75"
               style={{ width: `${getPercent(levels.ref)}%` }}
             />

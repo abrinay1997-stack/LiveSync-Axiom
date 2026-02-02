@@ -39,5 +39,6 @@ export interface TFData {
   magnitude: Float32Array;
   phase: Float32Array;
   coherence: Float32Array;
+  groupDelay?: Float32Array;
   correctionEq?: Float32Array;
 }

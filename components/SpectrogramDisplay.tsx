@@ -12,9 +12,9 @@ interface SpectrogramProps {
 const SpectrogramDisplay: React.FC<SpectrogramProps> = ({ config, isActive }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | undefined>(undefined);
-  
+
   const getMagmaColor = (norm: number) => {
-    const idx = Math.floor(norm * (COLORS.spectrogram.length - 1));
+    const idx = Math.min(COLORS.spectrogram.length - 1, Math.max(0, Math.floor(norm * (COLORS.spectrogram.length - 1))));
     return COLORS.spectrogram[idx];
   };
 
@@ -24,6 +24,10 @@ const SpectrogramDisplay: React.FC<SpectrogramProps> = ({ config, isActive }) =>
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
+    // Fixed pixel dimensions for spectrogram (scrolling buffer)
+    canvas.width = 1920;
+    canvas.height = 400;
+
     const bufferCanvas = document.createElement('canvas');
     bufferCanvas.width = canvas.width;
     bufferCanvas.height = canvas.height;
@@ -31,8 +35,9 @@ const SpectrogramDisplay: React.FC<SpectrogramProps> = ({ config, isActive }) =>
 
     const render = () => {
       if (isActive && bCtx) {
-        // Obtenemos datos sin ganancia visual y la aplicamos aquí junto al TLD
         const data = audioEngine.getProcessedData('none', 'None', false, 0);
+        const fftSize = config.fftSize;
+
         if (data.length > 0) {
           bCtx.drawImage(canvas, 0, 0);
           ctx.drawImage(bufferCanvas, 0, 1);
@@ -40,17 +45,17 @@ const SpectrogramDisplay: React.FC<SpectrogramProps> = ({ config, isActive }) =>
           const lineImgData = ctx.createImageData(canvas.width, 1);
           for (let x = 0; x < canvas.width; x++) {
             const freq = Math.pow(10, (x / canvas.width) * (Math.log10(20000) - Math.log10(20)) + Math.log10(20));
-            const binIndex = Math.floor((freq * 4096) / 48000);
-            
-            // Aplicar TLD + Visual Gain
+            const binIndex = Math.min(data.length - 1, Math.max(0, Math.round((freq * fftSize) / 48000)));
+
+            // Apply TLD + Visual Gain
             const octaves = Math.log2(freq / 1000);
             const tilt = octaves * config.tld;
             const val = (data[binIndex] || config.minDb) + config.visualGain + tilt;
-            
+
             const range = config.maxDb - config.minDb;
             const norm = Math.min(1, Math.max(0, (val - config.minDb) / range));
             const hex = getMagmaColor(norm);
-            
+
             const r = parseInt(hex.slice(1,3), 16);
             const g = parseInt(hex.slice(3,5), 16);
             const b = parseInt(hex.slice(5,7), 16);
@@ -73,7 +78,7 @@ const SpectrogramDisplay: React.FC<SpectrogramProps> = ({ config, isActive }) =>
 
   return (
     <div className="h-40 bg-slate-950 border border-white/5 rounded-2xl overflow-hidden relative shadow-inner">
-      <canvas ref={canvasRef} width={1920} height={400} className="w-full h-full object-fill" />
+      <canvas ref={canvasRef} className="w-full h-full" style={{ objectFit: 'fill' }} />
       <div className="absolute right-3 top-0 h-full flex flex-col justify-between py-2 text-[7px] mono font-bold text-white/10 uppercase pointer-events-none">
         <span>NOW</span><span>-5S</span><span>-10S</span><span>-15S</span>
       </div>

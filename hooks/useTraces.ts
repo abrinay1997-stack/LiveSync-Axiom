@@ -4,7 +4,6 @@ import { TraceData } from '../types';
 import { TRACE_COLORS } from '../constants';
 import { audioEngine } from '../services/AudioEngine';
 import { AcousticUtils } from '../services/AcousticUtils';
-import { toArrayBuffer } from '../services/AudioUtils';
 
 const STORAGE_KEY = 'livesync_snapshots';
 
@@ -38,31 +37,27 @@ export const useTraces = () => {
   }, [traces]);
 
   const captureTrace = useCallback(() => {
-    const analyzer = audioEngine.getAnalyzer();
-    if (!analyzer) return;
-    
-    let data: Float32Array<ArrayBuffer>;
+    let data: Float32Array;
     let isSweep = false;
-    
+
     const lastSweep = (window as any).Axiom_LastSweepData;
     if (lastSweep instanceof Float32Array) {
       data = lastSweep.slice();
       delete (window as any).Axiom_LastSweepData;
       isSweep = true;
     } else {
-      data = new Float32Array(analyzer.frequencyBinCount);
-      analyzer.getFloatFrequencyData(data);
+      // Get current RTA data from DSP engine (no AnalyserNode needed)
+      data = audioEngine.getProcessedData('none', 'Exp', false, 0);
+      if (data.length === 0) return;
     }
-    
+
     const tf = audioEngine.getTransferFunction('none');
-    
-    // CORRECCIÓN NETLIFY: Analizamos sobre la vista actual
+
     const metadata = AcousticUtils.analyzeTrace(data, 48000);
-    
-    // Aseguramos que las magnitudes guardadas sean copias limpias (clones)
-    const savedMagnitudes = new Float32Array(toArrayBuffer(data));
-    const savedPhase = new Float32Array(toArrayBuffer(tf.phase));
-    const savedCoherence = new Float32Array(toArrayBuffer(tf.coherence));
+
+    const savedMagnitudes = data.slice();
+    const savedPhase = tf.phase.length > 0 ? tf.phase.slice() : undefined;
+    const savedCoherence = tf.coherence.length > 0 ? tf.coherence.slice() : undefined;
 
     const newTrace: TraceData = {
       id: Math.random().toString(36).substr(2, 9),
