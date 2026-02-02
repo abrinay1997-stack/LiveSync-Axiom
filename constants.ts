@@ -26,14 +26,19 @@ export const DEFAULT_CONFIG: MeasurementConfig = {
   smoothing: '1/3',
   averaging: 'Exp',
   averagingCount: 8,
+  windowType: 'hann',
+  useMTW: false,
   minFreq: 20,
   maxFreq: 20000,
-  minDb: -110, 
-  maxDb: 0,    
-  visualGain: 0, 
-  tld: 3, // Target Landscape Distance por defecto actualizado a 3 dB
+  minDb: -110,
+  maxDb: 0,
+  visualGain: 0,
+  tld: 3,
   showPhase: true,
-  showCoherence: true
+  showCoherence: true,
+  showGroupDelay: false,
+  splCalOffset: 0,
+  micCalibration: null,
 };
 
 export const LOG_FREQUENCIES = [

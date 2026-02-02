@@ -2,12 +2,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { COLORS } from '../constants';
 import { audioEngine } from '../services/AudioEngine';
-import { Timer, Ruler, ArrowDown, Activity } from 'lucide-react';
+import { Timer, Ruler, ArrowDown } from 'lucide-react';
 
 const ImpulseDisplay: React.FC<{ isActive: boolean }> = ({ isActive }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | undefined>(undefined);
-  const [timeWindow, setTimeWindow] = useState(100); 
+  const [timeWindow, setTimeWindow] = useState(100);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -15,14 +15,22 @@ const ImpulseDisplay: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
+    // DPI awareness
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const width = rect.width;
+    const height = rect.height;
+
     const render = () => {
-      const { width, height } = canvas;
       const impulse = audioEngine.lastImpulseResponse;
 
       ctx.fillStyle = COLORS.bg;
       ctx.fillRect(0, 0, width, height);
 
-      // Grid sutil
+      // Grid
       ctx.strokeStyle = 'rgba(255,255,255,0.03)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -35,21 +43,20 @@ const ImpulseDisplay: React.FC<{ isActive: boolean }> = ({ isActive }) => {
       if (impulse.length > 0) {
         const samplesToShow = (timeWindow / 1000) * 48000;
 
-        // Dibujar la curva ETC (Envelope Time Curve) en dB
+        // Draw ETC (Envelope Time Curve) in dB
         ctx.beginPath();
         ctx.strokeStyle = COLORS.primary;
         ctx.lineWidth = 2;
-        
+
         for (let i = 0; i < Math.min(impulse.length, samplesToShow); i++) {
           const x = (i / samplesToShow) * width;
-          // Escala logarítmica de energía (0 a -60dB)
           const db = 20 * Math.log10(Math.max(1e-4, Math.abs(impulse[i])));
-          const y = (db / -60) * height; // 0dB arriba, -60dB abajo
+          const y = (db / -60) * height;
           if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
         ctx.stroke();
 
-        // Marcador de Pico Principal
+        // Direct arrival marker
         const peakSamples = audioEngine.currentDelaySamples;
         const peakX = (peakSamples / samplesToShow) * width;
         if (peakX < width) {
@@ -59,7 +66,7 @@ const ImpulseDisplay: React.FC<{ isActive: boolean }> = ({ isActive }) => {
           ctx.setLineDash([]);
           ctx.fillStyle = COLORS.warning;
           ctx.font = 'bold 10px mono';
-          ctx.fillText(`LLEGADA DIRECTA`, peakX + 5, 20);
+          ctx.fillText(`DIRECT ARRIVAL`, peakX + 5, 20);
         }
       } else {
         ctx.fillStyle = 'rgba(255,255,255,0.2)';
@@ -75,6 +82,8 @@ const ImpulseDisplay: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [timeWindow, isActive]);
 
+  const metrics = audioEngine.acousticMetrics;
+
   return (
     <div className="flex flex-col gap-4 flex-1 overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 shrink-0">
@@ -87,14 +96,33 @@ const ImpulseDisplay: React.FC<{ isActive: boolean }> = ({ isActive }) => {
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-slate-900/40 p-4 rounded-2xl border border-white/5 backdrop-blur-md grid grid-cols-2 gap-4">
-           {audioEngine.acousticMetrics ? (
+        <div className="lg:col-span-2 bg-slate-900/40 p-4 rounded-2xl border border-white/5 backdrop-blur-md grid grid-cols-3 gap-4">
+           {metrics ? (
              <>
-               <div className="flex flex-col justify-center border-r border-white/5"><span className="text-[9px] font-black text-emerald-500 uppercase">Clarity C80</span><div className="flex items-baseline gap-2"><span className="text-xl font-black text-white mono">{audioEngine.acousticMetrics.c80}</span><span className="text-[9px] text-slate-500 mono">dB</span></div></div>
-               <div className="flex flex-col justify-center"><span className="text-[9px] font-black text-cyan-400 uppercase">Definition D50</span><div className="flex items-baseline gap-2"><span className="text-xl font-black text-white mono">{audioEngine.acousticMetrics.d50}</span><span className="text-[9px] text-slate-500 mono">%</span></div></div>
+               <div className="flex flex-col justify-center border-r border-white/5">
+                 <span className="text-[9px] font-black text-emerald-500 uppercase">Clarity C80</span>
+                 <div className="flex items-baseline gap-2">
+                   <span className="text-xl font-black text-white mono">{metrics.c80}</span>
+                   <span className="text-[9px] text-slate-500 mono">dB</span>
+                 </div>
+               </div>
+               <div className="flex flex-col justify-center border-r border-white/5">
+                 <span className="text-[9px] font-black text-cyan-400 uppercase">Definition D50</span>
+                 <div className="flex items-baseline gap-2">
+                   <span className="text-xl font-black text-white mono">{metrics.d50}</span>
+                   <span className="text-[9px] text-slate-500 mono">%</span>
+                 </div>
+               </div>
+               <div className="flex flex-col justify-center">
+                 <span className="text-[9px] font-black text-purple-400 uppercase">RT60 (T20)</span>
+                 <div className="flex items-baseline gap-2">
+                   <span className="text-xl font-black text-white mono">{metrics.rt60}</span>
+                   <span className="text-[9px] text-slate-500 mono">s</span>
+                 </div>
+               </div>
              </>
            ) : (
-             <div className="col-span-2 flex items-center justify-center text-[9px] font-bold text-slate-600 uppercase italic">No impulse data. Use "D" with Pink Noise or Sweep.</div>
+             <div className="col-span-3 flex items-center justify-center text-[9px] font-bold text-slate-600 uppercase italic">No impulse data. Use "D" with Pink Noise or Sweep.</div>
            )}
         </div>
 
@@ -104,7 +132,7 @@ const ImpulseDisplay: React.FC<{ isActive: boolean }> = ({ isActive }) => {
       </div>
 
       <div className="relative flex-1 bg-slate-950 rounded-2xl overflow-hidden border border-white/10 group shadow-inner">
-        <canvas ref={canvasRef} width={1920} height={1080} className="w-full h-full object-fill" />
+        <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }} />
         <div className="absolute left-4 top-0 h-full flex flex-col justify-between py-6 text-[8px] mono text-slate-700 font-bold pointer-events-none"><span>0 dB</span><span>-10</span><span>-20</span><span>-30</span><span>-40</span><span>-50</span><span>-60 dB</span></div>
         <div className="absolute bottom-4 left-0 w-full px-12 flex justify-between text-[8px] mono text-slate-700 font-bold pointer-events-none">{Array.from({length: 6}).map((_, i) => (<span key={i}>{((i/5) * timeWindow).toFixed(0)}ms</span>))}</div>
       </div>
