@@ -44,8 +44,8 @@ const MainStage: React.FC<MainStageProps> = ({ activeTab, bottomVisible }) => {
              <div className="flex flex-col gap-1">
                 <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">dB Range</span>
                 <div className="flex gap-3">
-                   <div className="flex items-center bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 gap-2"><Maximize2 size={12} className="text-cyan-400"/><input type="number" value={config.maxDb} onChange={(e) => updateConfig({ maxDb: parseInt(e.target.value) || 0 })} className="bg-transparent text-[11px] mono text-white font-bold w-12 outline-none text-center" /></div>
-                   <div className="flex items-center bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 gap-2"><Minimize2 size={12} className="text-rose-400"/><input type="number" value={config.minDb} onChange={(e) => updateConfig({ minDb: parseInt(e.target.value) || 0 })} className="bg-transparent text-[11px] mono text-white font-bold w-12 outline-none text-center" /></div>
+                   <div className="flex items-center bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 gap-2"><Maximize2 size={12} className="text-cyan-400"/><input type="number" value={config.maxDb} onChange={(e) => { const v = Math.max(-50, Math.min(20, parseInt(e.target.value) || 0)); updateConfig({ maxDb: v }); }} className="bg-transparent text-[11px] mono text-white font-bold w-12 outline-none text-center" /></div>
+                   <div className="flex items-center bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 gap-2"><Minimize2 size={12} className="text-rose-400"/><input type="number" value={config.minDb} onChange={(e) => { const v = Math.max(-150, Math.min(-20, parseInt(e.target.value) || -110)); updateConfig({ minDb: v }); }} className="bg-transparent text-[11px] mono text-white font-bold w-12 outline-none text-center" /></div>
                 </div>
              </div>
              <div className="flex flex-col gap-1">
