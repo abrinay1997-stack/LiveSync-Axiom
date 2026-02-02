@@ -20,7 +20,7 @@ import {
   fftForward, fftInverse, realToComplex, createWindow,
   type WindowType
 } from './FFT';
-import type { SmoothingType, AveragingType, TFData } from '../types';
+import type { SmoothingType, AveragingType, TFData, MicCalibration } from '../types';
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
 
@@ -161,6 +161,10 @@ export class DSPEngine {
   public lastImpulseResponse: Float32Array = new Float32Array(0);
   public acousticMetrics: AcousticMetricsData | null = null;
 
+  // Microphone calibration correction curve (dB per bin, interpolated)
+  private micCalCurve: Float32Array | null = null;
+  private _lastMicCal: MicCalibration | null = null;
+
   // Sweep capture
   private isSweepCapturing = false;
   private sweepPeakBuffer: Float32Array | null = null;
@@ -195,6 +199,10 @@ export class DSPEngine {
         this.accumulators.set(v, createAccumulator(bins));
         this.fifoBuffers.set(v, []);
       }
+      // Rebuild mic cal curve for new FFT size
+      if (this._lastMicCal) {
+        this.micCalCurve = this.interpolateCalCurve(this._lastMicCal, v);
+      }
     }
   }
 
@@ -209,6 +217,44 @@ export class DSPEngine {
 
   setWindow(type: WindowType): void {
     this.windowType = type;
+  }
+
+  /**
+   * Set microphone calibration data. Interpolates correction values
+   * to per-bin resolution for the current FFT size.
+   */
+  setMicCalibration(cal: MicCalibration | null): void {
+    this._lastMicCal = cal;
+    if (!cal || cal.freqs.length < 2) {
+      this.micCalCurve = null;
+      return;
+    }
+    this.micCalCurve = this.interpolateCalCurve(cal, this._fftSize);
+  }
+
+  private interpolateCalCurve(cal: MicCalibration, fftSize: number): Float32Array {
+    const bins = fftSize / 2 + 1;
+    const curve = new Float32Array(bins);
+    const { freqs, corrections } = cal;
+
+    for (let i = 0; i < bins; i++) {
+      const freq = (i * SAMPLE_RATE) / fftSize;
+      if (freq <= freqs[0]) {
+        curve[i] = corrections[0];
+      } else if (freq >= freqs[freqs.length - 1]) {
+        curve[i] = corrections[corrections.length - 1];
+      } else {
+        // Linear interpolation between calibration points
+        for (let j = 0; j < freqs.length - 1; j++) {
+          if (freq >= freqs[j] && freq < freqs[j + 1]) {
+            const t = (freq - freqs[j]) / (freqs[j + 1] - freqs[j]);
+            curve[i] = corrections[j] + t * (corrections[j + 1] - corrections[j]);
+            break;
+          }
+        }
+      }
+    }
+    return curve;
   }
 
   // ─── Sample Input (called from AudioEngine onmessage) ─────────────────────
@@ -566,9 +612,13 @@ export class DSPEngine {
     const data = isRef ? acc.rtaRef : acc.rtaMeas;
     const out = new Float32Array(bins);
 
-    // Convert linear power to dB
+    // Convert linear power to dB and apply mic calibration
     for (let i = 0; i < bins; i++) {
       out[i] = data[i] > 1e-30 ? 10 * Math.log10(data[i]) : -150;
+      // Apply mic calibration correction (only on meas channel)
+      if (!isRef && this.micCalCurve && i < this.micCalCurve.length) {
+        out[i] += this.micCalCurve[i];
+      }
       out[i] += visualGain;
     }
 
