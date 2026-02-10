@@ -27,6 +27,9 @@ export class AudioEngine {
   // Sweep state
   private isSweepCapturing: boolean = false;
 
+  // Stereo detection (true = dual-channel available, false = mono device)
+  public isStereoInput: boolean = false;
+
   // Device change callback
   private onDeviceChangeCallback: (() => void) | null = null;
 
@@ -69,10 +72,14 @@ export class AudioEngine {
         class CaptureProcessor extends AudioWorkletProcessor {
           process(inputs) {
             const input = inputs[0];
-            if (input && input[0] && input[1]) {
+            if (input && input[0]) {
               const samplesL = new Float32Array(input[0]);
-              const samplesR = new Float32Array(input[1]);
-              this.port.postMessage({ samplesL, samplesR }, [samplesL.buffer, samplesR.buffer]);
+              // If stereo, use channel 2; if mono, duplicate channel 1
+              const samplesR = input[1]
+                ? new Float32Array(input[1])
+                : new Float32Array(input[0]);
+              const isStereo = !!input[1];
+              this.port.postMessage({ samplesL, samplesR, isStereo }, [samplesL.buffer, samplesR.buffer]);
             }
             return true;
           }
@@ -116,6 +123,7 @@ export class AudioEngine {
       this.workletNode.port.onmessage = (e) => {
         const sl: Float32Array = e.data.samplesL;
         const sr: Float32Array = e.data.samplesR;
+        this.isStereoInput = e.data.isStereo;
         this.dsp.pushSamples(sl, sr);
       };
 

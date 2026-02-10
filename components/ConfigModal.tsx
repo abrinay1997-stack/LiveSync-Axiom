@@ -314,6 +314,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 onSelect={onSelectDevice}
                 onRefresh={onRefreshDevices}
                 disabled={isEngineStarted}
+                isStarted={isEngineStarted}
               />
             </div>
 
