@@ -3,8 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { MeasurementConfig, TraceData, TFData } from '../types';
 import { COLORS, LOG_FREQUENCIES } from '../constants';
 import { audioEngine } from '../services/AudioEngine';
-import { useMeasurement } from '../context/MeasurementContext';
-import { ZapOff, Info, Clock, Wand2, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import { Info } from 'lucide-react';
 import CorrectionPanel from './CorrectionPanel';
 
 interface TFDisplayProps {
@@ -13,15 +12,15 @@ interface TFDisplayProps {
   traces: TraceData[];
   showCorrectionPanel: boolean;
   setShowCorrectionPanel: (show: boolean) => void;
+  coherenceThreshold: number;
+  showBlanked: boolean;
 }
 
-const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces, showCorrectionPanel, setShowCorrectionPanel }) => {
+const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces, showCorrectionPanel, setShowCorrectionPanel, coherenceThreshold, showBlanked }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | undefined>(undefined);
-  const { updateConfig } = useMeasurement();
+  // Controls moved to MainStage for visibility
 
-  const [coherenceThreshold, setCoherenceThreshold] = useState(0.3);
-  const [showBlanked, setShowBlanked] = useState(true);
   const [latestTFData, setLatestTFData] = useState<TFData | null>(null);
 
   useEffect(() => {
@@ -262,79 +261,6 @@ const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces, s
               </span>
            </div>
         </div>
-      </div>
-
-      {/* Controls */}
-      <div className="h-14 bg-black/80 border-t border-white/5 flex items-center px-6 gap-8 shrink-0 overflow-x-auto">
-          <div className="flex items-center gap-4 border-r border-white/5 pr-8 shrink-0">
-            <div className="flex flex-col gap-0.5">
-               <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Coh. Threshold</span>
-               <div className="flex items-center gap-3">
-                  <input
-                    type="range" min="0" max="1" step="0.05"
-                    value={coherenceThreshold}
-                    onChange={(e) => setCoherenceThreshold(parseFloat(e.target.value))}
-                    className="w-24 h-1 bg-slate-800 rounded-full appearance-none accent-orange-500"
-                  />
-                  <span className="text-[10px] mono font-bold text-orange-500">{(coherenceThreshold * 100).toFixed(0)}%</span>
-               </div>
-            </div>
-            <button
-              onClick={() => setShowBlanked(!showBlanked)}
-              className={`p-2 rounded-lg border transition-all ${showBlanked ? 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'bg-white/5 border-white/5 text-slate-600'}`}
-              title="Toggle Blanking visibility"
-            >
-              <ZapOff size={16} />
-            </button>
-          </div>
-
-          {/* Group Delay Toggle */}
-          <div className="flex items-center gap-2 border-r border-white/5 pr-8 shrink-0">
-            <button
-              onClick={() => updateConfig({ showGroupDelay: !config.showGroupDelay })}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all ${config.showGroupDelay ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' : 'bg-white/5 border-white/5 text-slate-600'}`}
-              title="Toggle Group Delay / Phase"
-            >
-              <Clock size={14} />
-              {config.showGroupDelay ? 'GRP DELAY' : 'PHASE'}
-            </button>
-          </div>
-
-          <div className="flex items-center gap-4 shrink-0">
-             <div className="flex flex-col gap-0.5">
-                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Manual Alignment (Offset)</span>
-                <div className="flex items-center bg-black/60 rounded-lg border border-white/10 px-1 py-1">
-                   <button onClick={() => {audioEngine.phaseOffsetMs -= 0.1}} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors">-</button>
-                   <div className="px-3 min-w-[80px] text-center">
-                      <span className="text-[11px] mono text-cyan-400 font-black">{audioEngine.phaseOffsetMs.toFixed(2)} ms</span>
-                   </div>
-                   <button onClick={() => {audioEngine.phaseOffsetMs += 0.1}} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors">+</button>
-                </div>
-             </div>
-             <button
-               onClick={() => {audioEngine.phaseOffsetMs = 0}}
-               className="text-[9px] font-black text-slate-500 hover:text-rose-500 transition-colors uppercase border border-white/5 px-2 py-1 rounded"
-             >
-               Reset
-             </button>
-          </div>
-
-          {/* Correction Panel Toggle */}
-          <div className="flex items-center gap-2 border-l border-white/5 pl-8 shrink-0">
-            <button
-              onClick={() => setShowCorrectionPanel(!showCorrectionPanel)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all ${
-                showCorrectionPanel
-                  ? 'bg-purple-500/20 border-purple-500/30 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
-                  : 'bg-white/5 border-white/10 text-slate-500 hover:text-white hover:border-white/20'
-              }`}
-              title="Toggle Correction Analysis Panel"
-            >
-              <Wand2 size={14} />
-              {showCorrectionPanel ? 'Hide Analysis' : 'EQ / Acoustic'}
-              {showCorrectionPanel ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
-            </button>
-          </div>
       </div>
       </div>
 

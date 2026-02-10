@@ -16,7 +16,7 @@ const AppContent: React.FC = () => {
     clearAllTraces, exportSession, importSession
   } = useMeasurement();
 
-  const [activeTab, setActiveTab] = useState<'rta' | 'tf' | 'impulse'>('rta');
+  const [activeTab, setActiveTab] = useState<'rta' | 'tf' | 'impulse' | 'security'>('rta');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bottomOpen, setBottomOpen] = useState(true);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
@@ -31,6 +31,7 @@ const AppContent: React.FC = () => {
     'Digit1': () => setActiveTab('rta'),
     'Digit2': () => setActiveTab('tf'),
     'Digit3': () => setActiveTab('impulse'),
+    'Digit4': () => setActiveTab('security'),
     'KeyD': analysis.runAutoDelay,
     'KeyE': analysis.generateCorrection,
     'Comma': () => setConfigOpen(prev => !prev),
