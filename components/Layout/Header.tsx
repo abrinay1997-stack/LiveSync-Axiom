@@ -3,7 +3,7 @@ import React from 'react';
 import {
   BarChart3, GitCompare, Timer, Settings, Activity,
   PanelLeft, PanelBottom, PanelRight, HelpCircle,
-  Home, Gauge, LifeBuoy, BookOpen
+  Home, Gauge, LifeBuoy, BookOpen, Shield
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -45,7 +45,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onT
           {[
             { id: 'rta', icon: <BarChart3 size={12} />, label: 'RTA' },
             { id: 'tf', icon: <GitCompare size={12} />, label: 'Transfer' },
-            { id: 'impulse', icon: <Timer size={12} />, label: 'Impulse' }
+            { id: 'impulse', icon: <Timer size={12} />, label: 'Impulse' },
+            { id: 'security', icon: <Shield size={12} />, label: 'Security' }
           ].map((tab) => (
             <div key={tab.id} className="flex items-center relative group/tab">
               <button 

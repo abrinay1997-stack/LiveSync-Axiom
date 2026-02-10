@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
-import { Activity, Clock, RotateCcw, Maximize2, Minimize2, PlusSquare, Wand2 } from 'lucide-react';
+import { Activity, Clock, RotateCcw, Maximize2, Minimize2, PlusSquare, Wand2, ZapOff, Sparkles } from 'lucide-react';
 import RTADisplay from '../RTADisplay';
 import SpectrogramDisplay from '../SpectrogramDisplay';
 import TransferDisplay from '../TransferDisplay';
 import ImpulseDisplay from '../ImpulseDisplay';
+import WatermarkPanel from '../WatermarkPanel';
 import { useMeasurement } from '../../context/MeasurementContext';
+import { audioEngine } from '../../services/AudioEngine';
 
 interface MainStageProps {
   activeTab: string;
@@ -16,6 +18,8 @@ const MainStage: React.FC<MainStageProps> = ({ activeTab, bottomVisible }) => {
   const { config, traces, setSmoothing, updateConfig, analysis, audioSystem } = useMeasurement();
   const isStarted = audioSystem.isStarted;
   const [showCorrectionPanel, setShowCorrectionPanel] = useState(false);
+  const [coherenceThreshold, setCoherenceThreshold] = useState(0.3);
+  const [showBlanked, setShowBlanked] = useState(true);
 
   return (
     <section className="flex-1 flex flex-col p-4 gap-4 overflow-hidden bg-[#080808]">
@@ -26,8 +30,9 @@ const MainStage: React.FC<MainStageProps> = ({ activeTab, bottomVisible }) => {
             <SpectrogramDisplay config={config} isActive={isStarted} />
           </>
         )}
-        {activeTab === 'tf' && <TransferDisplay config={config} isActive={isStarted} traces={traces} showCorrectionPanel={showCorrectionPanel} setShowCorrectionPanel={setShowCorrectionPanel} />}
+        {activeTab === 'tf' && <TransferDisplay config={config} isActive={isStarted} traces={traces} showCorrectionPanel={showCorrectionPanel} setShowCorrectionPanel={setShowCorrectionPanel} coherenceThreshold={coherenceThreshold} showBlanked={showBlanked} />}
         {activeTab === 'impulse' && <ImpulseDisplay isActive={isStarted} />}
+        {activeTab === 'security' && <WatermarkPanel />}
       </div>
 
       {bottomVisible && (activeTab === 'rta' || activeTab === 'tf' || activeTab === 'impulse') && (
@@ -69,21 +74,75 @@ const MainStage: React.FC<MainStageProps> = ({ activeTab, bottomVisible }) => {
           </div>
 
           {activeTab === 'tf' && (
-            <div className="flex flex-col gap-1 shrink-0 border-l border-white/5 pl-8">
-              <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Analysis</span>
-              <button
-                onClick={() => setShowCorrectionPanel(!showCorrectionPanel)}
-                title="Abrir panel de sugerencias de EQ y tratamiento acustico"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                  showCorrectionPanel
-                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30'
-                    : 'bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500 hover:text-white'
-                }`}
-              >
-                <Wand2 size={14} />
-                {showCorrectionPanel ? 'HIDE EQ' : 'EQ / ACOUSTIC'}
-              </button>
-            </div>
+            <>
+              {/* TF-specific controls */}
+              <div className="flex items-center gap-4 border-l border-white/5 pl-8 shrink-0">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Coherence</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range" min="0" max="1" step="0.05"
+                      value={coherenceThreshold}
+                      onChange={(e) => setCoherenceThreshold(parseFloat(e.target.value))}
+                      title="Umbral de coherencia - datos bajo este nivel se atenuan"
+                      className="w-16 h-1 bg-slate-800 rounded-full appearance-none accent-orange-500"
+                    />
+                    <span className="text-[9px] mono font-bold text-orange-500 w-8">{(coherenceThreshold * 100).toFixed(0)}%</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowBlanked(!showBlanked)}
+                  title="Mostrar/ocultar datos de baja coherencia"
+                  className={`p-2 rounded-lg border transition-all ${showBlanked ? 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400' : 'bg-white/5 border-white/5 text-slate-600'}`}
+                >
+                  <ZapOff size={14} />
+                </button>
+                <button
+                  onClick={() => updateConfig({ showGroupDelay: !config.showGroupDelay })}
+                  title="Cambiar entre Phase y Group Delay"
+                  className={`px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase transition-all ${config.showGroupDelay ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' : 'bg-white/5 border-white/5 text-slate-500'}`}
+                >
+                  {config.showGroupDelay ? 'GRP DLY' : 'PHASE'}
+                </button>
+              </div>
+
+              {/* Manual offset */}
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Offset</span>
+                <div className="flex items-center bg-black/60 rounded-lg border border-white/10 px-1">
+                  <button onClick={() => {audioEngine.phaseOffsetMs -= 0.1}} className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white text-sm">-</button>
+                  <span className="text-[9px] mono text-cyan-400 font-bold w-12 text-center">{audioEngine.phaseOffsetMs.toFixed(1)}ms</span>
+                  <button onClick={() => {audioEngine.phaseOffsetMs += 0.1}} className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white text-sm">+</button>
+                </div>
+              </div>
+
+              {/* Analysis buttons */}
+              <div className="flex flex-col gap-1 shrink-0 border-l border-white/5 pl-8">
+                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Analysis</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={analysis.generateCorrection}
+                    disabled={!isStarted}
+                    title="Generar EQ correctiva inversa (tecla E)"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[9px] font-black text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all disabled:opacity-20"
+                  >
+                    <Sparkles size={12} /> GEN EQ
+                  </button>
+                  <button
+                    onClick={() => setShowCorrectionPanel(!showCorrectionPanel)}
+                    title="Abrir panel de sugerencias de EQ y tratamiento acustico"
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
+                      showCorrectionPanel
+                        ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30'
+                        : 'bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500 hover:text-white'
+                    }`}
+                  >
+                    <Wand2 size={12} />
+                    {showCorrectionPanel ? 'HIDE' : 'PANEL'}
+                  </button>
+                </div>
+              </div>
+            </>
           )}
 
           <div className="ml-auto flex items-center gap-8 shrink-0 border-l border-white/5 pl-8">
