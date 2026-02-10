@@ -6,13 +6,14 @@ import Footer from './components/Layout/Footer';
 import MainStage from './components/Layout/MainStage';
 import KnowledgeBase from './components/Layout/KnowledgeBase';
 import ConfigModal from './components/ConfigModal';
+import OnboardingModal, { useOnboarding } from './components/OnboardingModal';
 import { MeasurementProvider, useMeasurement } from './context/MeasurementContext';
 import { useHotkeys } from './hooks/useHotkeys';
 
 const AppContent: React.FC = () => {
-  const { 
-    audioSystem, traces, captureTrace, analysis, config, 
-    clearAllTraces, exportSession, importSession 
+  const {
+    audioSystem, traces, captureTrace, analysis, config,
+    clearAllTraces, exportSession, importSession
   } = useMeasurement();
 
   const [activeTab, setActiveTab] = useState<'rta' | 'tf' | 'impulse'>('rta');
@@ -20,6 +21,8 @@ const AppContent: React.FC = () => {
   const [bottomOpen, setBottomOpen] = useState(true);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
+
+  const { showOnboarding, setShowOnboarding, resetOnboarding } = useOnboarding();
 
   useHotkeys({
     'Space': captureTrace,
@@ -36,12 +39,13 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-[#050505] text-slate-200 overflow-hidden font-sans select-none animate-fade-in">
-      <Header 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        isStarted={audioSystem.isStarted} 
+      <Header
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isStarted={audioSystem.isStarted}
         onToggleEngine={audioSystem.toggleEngine}
         onOpenConfig={() => setConfigOpen(true)}
+        onOpenOnboarding={resetOnboarding}
         layout={{
           sidebar: sidebarOpen,
           bottom: bottomOpen,
@@ -68,7 +72,7 @@ const AppContent: React.FC = () => {
 
       <Footer isStarted={audioSystem.isStarted} />
 
-      <ConfigModal 
+      <ConfigModal
         isOpen={configOpen}
         onClose={() => setConfigOpen(false)}
         devices={audioSystem.devices}
@@ -82,6 +86,12 @@ const AppContent: React.FC = () => {
           clearAll: clearAllTraces,
           hasTraces: traces.length > 0
         }}
+      />
+
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={() => setShowOnboarding(false)}
       />
     </div>
   );

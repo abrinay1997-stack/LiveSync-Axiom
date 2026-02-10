@@ -1,10 +1,11 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { MeasurementConfig, TraceData } from '../types';
+import { MeasurementConfig, TraceData, TFData } from '../types';
 import { COLORS, LOG_FREQUENCIES } from '../constants';
 import { audioEngine } from '../services/AudioEngine';
 import { useMeasurement } from '../context/MeasurementContext';
-import { ZapOff, Info, Clock } from 'lucide-react';
+import { ZapOff, Info, Clock, Wand2, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import CorrectionPanel from './CorrectionPanel';
 
 interface TFDisplayProps {
   config: MeasurementConfig;
@@ -19,6 +20,8 @@ const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces })
 
   const [coherenceThreshold, setCoherenceThreshold] = useState(0.3);
   const [showBlanked, setShowBlanked] = useState(true);
+  const [showCorrectionPanel, setShowCorrectionPanel] = useState(false);
+  const [latestTFData, setLatestTFData] = useState<TFData | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -187,6 +190,11 @@ const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces })
           ? audioEngine.getTransferFunctionMTW(config.smoothing)
           : audioEngine.getTransferFunction(config.smoothing);
         drawTF(data.magnitude, data.phase, data.coherence, data.groupDelay, COLORS.primary, true);
+
+        // Store latest TF data for correction panel (throttled)
+        if (showCorrectionPanel && data.magnitude.length > 0) {
+          setLatestTFData(data);
+        }
       }
 
       rafRef.current = requestAnimationFrame(render);
@@ -194,12 +202,14 @@ const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces })
 
     render();
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [isActive, config, traces, coherenceThreshold, showBlanked]);
+  }, [isActive, config, traces, coherenceThreshold, showBlanked, showCorrectionPanel]);
 
   return (
-    <div className="relative flex-1 bg-slate-950 rounded-2xl overflow-hidden border border-white/10 flex flex-col group">
-      <div className="flex-1 relative">
-        <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }} />
+    <div className="relative flex-1 bg-slate-950 rounded-2xl overflow-hidden border border-white/10 flex flex-row group">
+      {/* Main TF Display */}
+      <div className={`flex-1 flex flex-col transition-all ${showCorrectionPanel ? 'mr-0' : ''}`}>
+        <div className="flex-1 relative">
+          <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }} />
 
         {/* Side markers */}
         <div className="absolute right-4 top-0 h-full flex flex-col text-[8px] mono text-slate-500 font-black pointer-events-none z-10">
@@ -286,7 +296,37 @@ const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces })
                Reset
              </button>
           </div>
+
+          {/* Correction Panel Toggle */}
+          <div className="flex items-center gap-2 border-l border-white/5 pl-8 shrink-0">
+            <button
+              onClick={() => setShowCorrectionPanel(!showCorrectionPanel)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all ${
+                showCorrectionPanel
+                  ? 'bg-purple-500/20 border-purple-500/30 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                  : 'bg-white/5 border-white/10 text-slate-500 hover:text-white hover:border-white/20'
+              }`}
+              title="Toggle Correction Analysis Panel"
+            >
+              <Wand2 size={14} />
+              {showCorrectionPanel ? 'Hide Analysis' : 'EQ / Acoustic'}
+              {showCorrectionPanel ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
+            </button>
+          </div>
       </div>
+      </div>
+
+      {/* Correction Panel Sidebar */}
+      {showCorrectionPanel && (
+        <div className="w-80 border-l border-white/5 bg-black/40 overflow-y-auto shrink-0">
+          <CorrectionPanel
+            magnitude={latestTFData?.magnitude || new Float32Array(0)}
+            coherence={latestTFData?.coherence || new Float32Array(0)}
+            fftSize={config.fftSize}
+            isActive={isActive && !!latestTFData}
+          />
+        </div>
+      )}
     </div>
   );
 };

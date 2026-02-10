@@ -127,7 +127,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
               </div>
 
               {/* FFT Size */}
-              <div className="space-y-2">
+              <div className="space-y-2" title="Tamano de la ventana FFT. Mayor = mas resolucion en bajas frecuencias pero mas latencia">
                 <div className="flex justify-between items-center px-1">
                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">FFT Size</span>
                   <span className="text-[9px] mono font-bold text-purple-400">{config.fftSize} pts</span>
@@ -137,6 +137,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                     <button
                       key={val}
                       onClick={() => updateConfig({ fftSize: val })}
+                      title={`${val} puntos - ${val === 16384 ? 'Maxima resolucion LF' : val === 4096 ? 'Balance recomendado' : val === 1024 ? 'Rapido pero baja res' : ''}`}
                       className={`flex-1 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.fftSize === val ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                       {val >= 1024 ? `${val / 1024}K` : val}
@@ -146,23 +147,33 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
               </div>
 
               {/* Window Type */}
-              <div className="space-y-2">
+              <div className="space-y-2" title="Ventana de analisis. Afecta resolucion espectral y fuga de lóbulos laterales">
                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1 block">Window Function</span>
                 <div className="flex bg-black/60 p-1.5 rounded-2xl border border-white/10">
-                  {windowOptions.map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => updateConfig({ windowType: opt.value })}
-                      className={`flex-1 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.windowType === opt.value ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-500 hover:text-slate-300'}`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                  {windowOptions.map(opt => {
+                    const tooltips: Record<WindowType, string> = {
+                      'hann': 'Hann - Balance general, recomendada para RTA',
+                      'hamming': 'Hamming - Similar a Hann, lobulos mas bajos',
+                      'blackman-harris': 'BH4 - Maxima separacion de tonos cercanos',
+                      'flattop': 'Flat-Top - Precision de amplitud, ideal calibracion',
+                      'rectangular': 'Rect - Sin ventana, maxima resolucion pero fuga alta',
+                    };
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => updateConfig({ windowType: opt.value })}
+                        title={tooltips[opt.value]}
+                        className={`flex-1 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.windowType === opt.value ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* MTW Toggle */}
-              <div className="flex items-center justify-between px-1 py-3 bg-black/40 rounded-xl border border-white/5">
+              <div className="flex items-center justify-between px-1 py-3 bg-black/40 rounded-xl border border-white/5" title="Combina multiples FFT sizes: alta resolucion en bajas frecuencias, rapida respuesta en altas">
                 <div className="flex items-center gap-2 pl-3">
                   <Layers size={14} className="text-purple-400" />
                   <div>
@@ -172,6 +183,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 </div>
                 <button
                   onClick={() => updateConfig({ useMTW: !config.useMTW })}
+                  title={config.useMTW ? 'Desactivar MTW' : 'Activar MTW para mejor resolucion adaptativa'}
                   className={`mr-3 px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${config.useMTW ? 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/20' : 'bg-white/5 text-slate-500 border-white/10'}`}
                 >
                   {config.useMTW ? 'ON' : 'OFF'}
@@ -179,25 +191,34 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
               </div>
 
               {/* Averaging */}
-              <div className="space-y-2">
+              <div className="space-y-2" title="Promediado de espectros para reducir ruido y estabilizar la traza">
                 <div className="flex justify-between items-center px-1">
                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Averaging</span>
                   <span className="text-[9px] mono font-bold text-purple-400">{config.averaging} ({config.averagingCount})</span>
                 </div>
                 <div className="flex gap-2">
                   <div className="flex bg-black/60 p-1.5 rounded-2xl border border-white/10 flex-1">
-                    {(['None', 'Exp', 'Lin', 'Inf'] as const).map(avg => (
-                      <button
-                        key={avg}
-                        onClick={() => updateConfig({ averaging: avg })}
-                        className={`flex-1 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.averaging === avg ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-500 hover:text-slate-300'}`}
-                      >
-                        {avg}
-                      </button>
-                    ))}
+                    {(['None', 'Exp', 'Lin', 'Inf'] as const).map(avg => {
+                      const avgTooltips: Record<string, string> = {
+                        'None': 'Sin promediado - respuesta instantanea',
+                        'Exp': 'Exponencial - peso mayor a muestras recientes',
+                        'Lin': 'Lineal - promedio simple de N muestras',
+                        'Inf': 'Infinito - acumula todo desde el inicio',
+                      };
+                      return (
+                        <button
+                          key={avg}
+                          onClick={() => updateConfig({ averaging: avg })}
+                          title={avgTooltips[avg]}
+                          className={`flex-1 py-2.5 rounded-xl text-[9px] font-black transition-all ${config.averaging === avg ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                          {avg}
+                        </button>
+                      );
+                    })}
                   </div>
                   {(config.averaging === 'Exp' || config.averaging === 'Lin') && (
-                    <div className="flex items-center bg-black/60 rounded-2xl border border-white/10 px-3">
+                    <div className="flex items-center bg-black/60 rounded-2xl border border-white/10 px-3" title="Numero de muestras a promediar">
                       <input
                         type="number" min="2" max="64" value={config.averagingCount}
                         onChange={(e) => updateConfig({ averagingCount: Math.max(2, parseInt(e.target.value) || 8) })}
