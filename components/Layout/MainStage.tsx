@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Activity, Clock, RotateCcw, Maximize2, Minimize2, PlusSquare } from 'lucide-react';
+import React, { useState } from 'react';
+import { Activity, Clock, RotateCcw, Maximize2, Minimize2, PlusSquare, Wand2 } from 'lucide-react';
 import RTADisplay from '../RTADisplay';
 import SpectrogramDisplay from '../SpectrogramDisplay';
 import TransferDisplay from '../TransferDisplay';
@@ -15,6 +15,7 @@ interface MainStageProps {
 const MainStage: React.FC<MainStageProps> = ({ activeTab, bottomVisible }) => {
   const { config, traces, setSmoothing, updateConfig, analysis, audioSystem } = useMeasurement();
   const isStarted = audioSystem.isStarted;
+  const [showCorrectionPanel, setShowCorrectionPanel] = useState(false);
 
   return (
     <section className="flex-1 flex flex-col p-4 gap-4 overflow-hidden bg-[#080808]">
@@ -25,7 +26,7 @@ const MainStage: React.FC<MainStageProps> = ({ activeTab, bottomVisible }) => {
             <SpectrogramDisplay config={config} isActive={isStarted} />
           </>
         )}
-        {activeTab === 'tf' && <TransferDisplay config={config} isActive={isStarted} traces={traces} />}
+        {activeTab === 'tf' && <TransferDisplay config={config} isActive={isStarted} traces={traces} showCorrectionPanel={showCorrectionPanel} setShowCorrectionPanel={setShowCorrectionPanel} />}
         {activeTab === 'impulse' && <ImpulseDisplay isActive={isStarted} />}
       </div>
 
@@ -66,6 +67,24 @@ const MainStage: React.FC<MainStageProps> = ({ activeTab, bottomVisible }) => {
                 )}
              </div>
           </div>
+
+          {activeTab === 'tf' && (
+            <div className="flex flex-col gap-1 shrink-0 border-l border-white/5 pl-8">
+              <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Analysis</span>
+              <button
+                onClick={() => setShowCorrectionPanel(!showCorrectionPanel)}
+                title="Abrir panel de sugerencias de EQ y tratamiento acustico"
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                  showCorrectionPanel
+                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30'
+                    : 'bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500 hover:text-white'
+                }`}
+              >
+                <Wand2 size={14} />
+                {showCorrectionPanel ? 'HIDE EQ' : 'EQ / ACOUSTIC'}
+              </button>
+            </div>
+          )}
 
           <div className="ml-auto flex items-center gap-8 shrink-0 border-l border-white/5 pl-8">
              <button onClick={analysis.resetAnalysis} title="Reiniciar analisis y promedios" className="p-3 bg-white/5 border border-white/10 rounded-xl text-slate-500 hover:text-white transition-all"><RotateCcw size={16} /></button>
