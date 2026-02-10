@@ -38,8 +38,8 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
       const lMeas = audioEngine.getPeakLevel(false); // Measurement (R)
       setLevelL(lRef);
       setLevelR(lMeas);
-      // Consider stereo if both channels have signal above noise floor
-      setIsStereo(lRef > -90 && lMeas > -90);
+      // Use actual stereo detection from AudioEngine
+      setIsStereo(audioEngine.isStereoInput);
     }, 100);
 
     return () => clearInterval(interval);
@@ -93,7 +93,7 @@ const DeviceSelector: React.FC<DeviceSelectorProps> = ({
               {isStereo ? (
                 <><Radio size={10} /> Stereo OK</>
               ) : (
-                <><AlertTriangle size={10} /> Check Inputs</>
+                <><AlertTriangle size={10} /> Mono - TF/Delay disabled</>
               )}
             </span>
           )}
