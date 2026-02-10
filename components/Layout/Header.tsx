@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { 
-  BarChart3, GitCompare, Timer, Settings, Activity, 
+import {
+  BarChart3, GitCompare, Timer, Settings, Activity,
   PanelLeft, PanelBottom, PanelRight, HelpCircle,
-  Home, Gauge, LifeBuoy
+  Home, Gauge, LifeBuoy, BookOpen
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -12,6 +12,7 @@ interface HeaderProps {
   isStarted: boolean;
   onToggleEngine: () => void;
   onOpenConfig: () => void;
+  onOpenOnboarding: () => void;
   layout: {
     sidebar: boolean;
     bottom: boolean;
@@ -22,7 +23,7 @@ interface HeaderProps {
   };
 }
 
-const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onToggleEngine, onOpenConfig, layout }) => {
+const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onToggleEngine, onOpenConfig, onOpenOnboarding, layout }) => {
   return (
     <header className="h-14 flex items-center justify-between px-6 bg-[#050505] border-b border-white/5 z-50 shrink-0 shadow-xl">
       <div className="flex items-center gap-8">
@@ -90,7 +91,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isStarted, onT
           </a>
         </div>
 
-        <button onClick={onOpenConfig} className="p-2 text-slate-500 hover:text-white transition-colors mr-2"><Settings size={18} /></button>
+        <button onClick={onOpenOnboarding} className="p-2 text-slate-500 hover:text-purple-400 transition-colors" title="Setup Guide"><BookOpen size={18} /></button>
+        <button onClick={onOpenConfig} className="p-2 text-slate-500 hover:text-white transition-colors mr-2" title="Settings"><Settings size={18} /></button>
         <button onClick={onToggleEngine} className={`px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${isStarted ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white' : 'bg-white text-black hover:bg-cyan-400'}`}>
           {isStarted ? 'STOP ENGINE' : 'RUN ENGINE'}
         </button>
