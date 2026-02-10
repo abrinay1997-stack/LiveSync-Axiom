@@ -45,6 +45,10 @@ const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces })
       const cohHeight = height * 0.1;
       const fftSize = config.fftSize;
 
+      // Use configurable dB range from config (same as RTA)
+      const tfMax = config.maxDb;
+      const tfMin = config.minDb;
+
       // Group delay display range (ms)
       const gdMax = 50;
       const gdMin = -50;
@@ -66,9 +70,9 @@ const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces })
         ctx.moveTo(x, 0); ctx.lineTo(x, height);
       });
 
-      // Magnitude grid (dB)
-      const tfMax = 18; const tfMin = -30;
-      for (let db = tfMax; db >= tfMin; db -= 6) {
+      // Magnitude grid (dB) - uses configurable range
+      const dbStep = 6; // Fixed step for grid lines
+      for (let db = tfMax; db >= tfMin; db -= dbStep) {
         const y = (tfMax - db) / (tfMax - tfMin) * magHeight;
         ctx.moveTo(0, y); ctx.lineTo(width, y);
       }
@@ -211,10 +215,27 @@ const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces })
         <div className="flex-1 relative">
           <canvas ref={canvasRef} className="w-full h-full" style={{ display: 'block' }} />
 
-        {/* Side markers */}
+        {/* Side markers - Dynamic based on config dB range */}
         <div className="absolute right-4 top-0 h-full flex flex-col text-[8px] mono text-slate-500 font-black pointer-events-none z-10">
-           <div className="h-[55%] flex flex-col justify-between py-2 text-right">
-             <span className="text-cyan-400">MAG: +18 dB</span><span>+12</span><span>+6</span><span className="text-white">0</span><span>-6</span><span>-12</span><span>-18</span><span>-24</span><span>-30 dB</span>
+           {/* Magnitude labels - absolute positioning */}
+           <div className="h-[55%] relative text-right">
+             {(() => {
+               const labels = [];
+               const step = 10;
+               for (let db = config.maxDb; db >= config.minDb; db -= step) {
+                 const pct = ((config.maxDb - db) / (config.maxDb - config.minDb)) * 100;
+                 labels.push(
+                   <span
+                     key={db}
+                     className={`absolute right-0 ${db === config.maxDb ? 'text-cyan-400' : db === 0 ? 'text-white' : ''}`}
+                     style={{ top: `${pct}%`, transform: 'translateY(-50%)' }}
+                   >
+                     {db === config.maxDb ? `MAG: ${db > 0 ? '+' : ''}${db}` : db === config.minDb ? `${db} dB` : `${db > 0 ? '+' : ''}${db}`}
+                   </span>
+                 );
+               }
+               return labels;
+             })()}
            </div>
            {config.showGroupDelay ? (
              <div className="h-[35%] flex flex-col justify-between py-2 text-right border-t border-white/5 bg-black/20">
