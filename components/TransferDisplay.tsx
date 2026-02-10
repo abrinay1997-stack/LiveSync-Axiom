@@ -11,16 +11,17 @@ interface TFDisplayProps {
   config: MeasurementConfig;
   isActive: boolean;
   traces: TraceData[];
+  showCorrectionPanel: boolean;
+  setShowCorrectionPanel: (show: boolean) => void;
 }
 
-const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces }) => {
+const TransferDisplay: React.FC<TFDisplayProps> = ({ config, isActive, traces, showCorrectionPanel, setShowCorrectionPanel }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | undefined>(undefined);
   const { updateConfig } = useMeasurement();
 
   const [coherenceThreshold, setCoherenceThreshold] = useState(0.3);
   const [showBlanked, setShowBlanked] = useState(true);
-  const [showCorrectionPanel, setShowCorrectionPanel] = useState(false);
   const [latestTFData, setLatestTFData] = useState<TFData | null>(null);
 
   useEffect(() => {
